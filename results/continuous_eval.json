@@ -1,0 +1,261 @@
+{
+  "label": "continuous-supply variant (same topology) \u2014 not BattLeDIM/LeakDB",
+  "n": 40,
+  "false_positive_rate": 0.0,
+  "true_positive_rate": 1.0,
+  "mean_hops_detected": 0.4838709677419355,
+  "sensors": [
+    "J17",
+    "J06",
+    "J08",
+    "J09",
+    "J04",
+    "J11",
+    "J15",
+    "J03",
+    "J10",
+    "J02"
+  ],
+  "rows": [
+    {
+      "id": "c0000",
+      "n_true": 1,
+      "detected": true,
+      "hops": 1.0
+    },
+    {
+      "id": "c0001",
+      "n_true": 1,
+      "detected": true,
+      "hops": 1.0
+    },
+    {
+      "id": "c0002",
+      "n_true": 1,
+      "detected": true,
+      "hops": 1.0
+    },
+    {
+      "id": "c0003",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0004",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0005",
+      "n_true": 1,
+      "detected": true,
+      "hops": 2.0
+    },
+    {
+      "id": "c0006",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0007",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0008",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0009",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0010",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0011",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0012",
+      "n_true": 1,
+      "detected": true,
+      "hops": 5.0
+    },
+    {
+      "id": "c0013",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0014",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0015",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0016",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0017",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0018",
+      "n_true": 1,
+      "detected": true,
+      "hops": 1.0
+    },
+    {
+      "id": "c0019",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0020",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0021",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0022",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0023",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0024",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0025",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0026",
+      "n_true": 1,
+      "detected": true,
+      "hops": 1.0
+    },
+    {
+      "id": "c0027",
+      "n_true": 1,
+      "detected": true,
+      "hops": 2.0
+    },
+    {
+      "id": "c0028",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0029",
+      "n_true": 1,
+      "detected": true,
+      "hops": 1.0
+    },
+    {
+      "id": "c0030",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0031",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0032",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0033",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0034",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0035",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0036",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0037",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    },
+    {
+      "id": "c0038",
+      "n_true": 0,
+      "detected": false,
+      "hops": 0.0
+    },
+    {
+      "id": "c0039",
+      "n_true": 1,
+      "detected": true,
+      "hops": 0.0
+    }
+  ]
+}

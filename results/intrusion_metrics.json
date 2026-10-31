@@ -1,0 +1,8 @@
+{
+  "threshold_m": 7.0,
+  "note": "Off-window pressure is clamped to 0 m (drained), so the off-window intrusion flag is identically true. The non-trivial number is the share of *in-window* node-steps below the 7 m prior.",
+  "mean_offwindow_flagged_node_hours": 32.083333333333336,
+  "mean_inwindow_node_step_share_below_prior": 0.0002314814814814815,
+  "frac_leaks_with_any_inwindow_P_below_prior": 0.01646090534979424,
+  "n": 300
+}

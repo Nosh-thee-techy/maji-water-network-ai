@@ -7,3 +7,9 @@
 **fig_localisation_vs_sensors.png** — Mean hop error and % of leaks located within 3 pipe segments vs pressure-sensor budget, emitter-calibration baseline, 300 simulated 48 h scenarios. Leak orifices 0.8–3.0 L/s at 20 m. False-positive rate on 57 zero-leak scenarios was 0 at every budget.
 
 **fig_water_balance_leak.png** — Estimated vs true leak share of supplied volume (percentage points), budget = 10 sensors, same 300 scenarios.
+
+**fig_dashboard_crew.png** — Crew-tab stand-in: DMA with budget-10 sensors and a true leak (scenario s0000).
+
+**fig_dashboard_manager.png** — Manager-tab stand-in: IWA-style water balance for s0000 (simulated m³ / 48 h).
+
+**fig_dashboard_health.png** — Health-tab stand-in: pressure at the leak node vs the 7 m intrusion prior.

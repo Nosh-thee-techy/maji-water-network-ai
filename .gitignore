@@ -23,6 +23,8 @@ Thumbs.db
 
 # Generated scenario libraries (keep a small sample under results/)
 data/scenarios/
+data/scenarios24/
+data/continuous/
 data/raw/
 data/tmp/
 *.parquet

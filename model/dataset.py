@@ -68,11 +68,15 @@ def scenario_tensors(
     demand = frames["customer_lps"][names].to_numpy(dtype=np.float32)
     inlet = obs["inlet_flow_lps"].to_numpy(dtype=np.float32)
     is_sensor = np.array([1.0 if n in sensors else 0.0 for n in names], dtype=np.float32)
-    # pack only supply-window rows
+    # Two aggregated samples per scenario (fill-window mean, after-fill mean).
+    # Full 5-minute sequences made training too slow for the time budget;
+    # these two windows are also what the baseline uses.
     xs, ys_p, ys_q, ys_d = [], [], [], []
-    for i, keep in enumerate(supply):
-        if not keep:
+    for mask in (fill > 0, after > 0):
+        idx = np.where(mask & supply)[0]
+        if len(idx) == 0:
             continue
+        i = int(idx[len(idx) // 2])
         p_row = np.zeros(len(names), dtype=np.float32)
         miss = np.ones(len(names), dtype=np.float32)
         for j, n in enumerate(names):

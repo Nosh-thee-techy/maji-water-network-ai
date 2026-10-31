@@ -1,0 +1,65 @@
+{
+  "repo": "https://github.com/Nosh-thee-techy/maji-water-network-ai",
+  "tag": "v1-baseline",
+  "trl_current": "3-4",
+  "trl_target": "5-6",
+  "labels": {
+    "intermittent_library": "simulated",
+    "continuous_same_topology": "simulated, continuous-supply variant — not BattLeDIM",
+    "battle_dim": "not_run",
+    "hardware_bom": "estimated"
+  },
+  "library": {
+    "n": 300,
+    "duration_h": 48,
+    "n_zero_leak": 57,
+    "leak_q_ref_lps_range": [0.8, 3.0],
+    "note": "Leak sizes are 0.8-3.0 L/s at 20 m, not 1% of DMA inflow."
+  },
+  "localisation_vs_sensors_baseline": {
+    "5": {"mean_hops": 1.705761316872428, "frac_within_3": 0.8683127572016461, "fpr": 0.0, "tpr": 1.0},
+    "10": {"mean_hops": 0.7716049382716049, "frac_within_3": 0.9588477366255144, "fpr": 0.0, "tpr": 1.0},
+    "15": {"mean_hops": 0.2962962962962963, "frac_within_3": 0.9835390946502057, "fpr": 0.0, "tpr": 1.0},
+    "18": {"mean_hops": 0.23045267489711935, "frac_within_3": 0.9753086419753086, "fpr": 0.0, "tpr": 1.0}
+  },
+  "water_balance_budget_10": {
+    "mean_abs_error_leak_percentage_points": 1.6758178752927895,
+    "median_abs_error_leak_percentage_points": 1.7921784371414624
+  },
+  "intrusion": {
+    "threshold_m": 7.0,
+    "offwindow_slack_hours_per_48h": 32.083333333333336,
+    "inwindow_node_step_share_below_prior": 0.0002314814814814815,
+    "frac_leaks_with_any_inwindow_low_P": 0.01646090534979424,
+    "note": "Off-window flag is trivial (drained). In-window 7 m events are rare on this DMA."
+  },
+  "continuous_same_topology_budget_10": {
+    "n": 40,
+    "fpr": 0.0,
+    "tpr": 1.0,
+    "mean_hops": 0.4838709677419355
+  },
+  "gnn_ensemble_budget_10": {
+    "status": "ran",
+    "n_test": 45,
+    "n_ensemble": 5,
+    "false_positive_rate": 0.0,
+    "true_positive_rate": 0.0,
+    "mean_hops_detected": null,
+    "mean_recon_mae_m": 1.1543631964259677,
+    "mean_simulation_uncertainty_m": 0.6099660886658562,
+    "beats_baseline_on_localisation": false,
+    "note": "GNN reconstructs pressure; leak detection TPR is 0. Ship the baseline for dig-here."
+  },
+  "battle_dim_official": {
+    "status": "not_run",
+    "reason": "Official year-long SCADA scoring not completed in the time budget."
+  },
+  "ltown_synthetic_not_battledim": {
+    "status": "ran",
+    "n_junctions": 782,
+    "n_tested": 8,
+    "exact_node_hit_rate": 0.0,
+    "label": "L-Town topology, synthetic 2 L/s emitters, NOT official BattLeDIM scoring"
+  }
+}

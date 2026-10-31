@@ -1,0 +1,61 @@
+{
+  "label": "L-Town topology, synthetic 2 L/s emitters, NOT official BattLeDIM scoring",
+  "n_junctions": 782,
+  "n_tested": 8,
+  "exact_node_hit_rate": 0.0,
+  "sensors": [
+    "n2",
+    "n76",
+    "n151",
+    "n249",
+    "n326",
+    "n401",
+    "n476",
+    "n553",
+    "n639",
+    "n709"
+  ],
+  "rows": [
+    {
+      "true": "n749",
+      "pred": "n636",
+      "hit": false
+    },
+    {
+      "true": "n225",
+      "pred": "n636",
+      "hit": false
+    },
+    {
+      "true": "n362",
+      "pred": "n456",
+      "hit": false
+    },
+    {
+      "true": "n61",
+      "pred": "n362",
+      "hit": false
+    },
+    {
+      "true": "n681",
+      "pred": "n636",
+      "hit": false
+    },
+    {
+      "true": "n494",
+      "pred": "n636",
+      "hit": false
+    },
+    {
+      "true": "n131",
+      "pred": "n636",
+      "hit": false
+    },
+    {
+      "true": "n724",
+      "pred": "n362",
+      "hit": false
+    }
+  ],
+  "status": "ran"
+}

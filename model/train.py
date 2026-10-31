@@ -56,7 +56,7 @@ def train_one(
             loss = rec + 0.4 * leak + physics_w * phys
             loss.backward()
             opt.step()
-            total += float(loss)
+            total += float(loss.detach())
             n += 1
         if (ep + 1) % 5 == 0 or ep == 0:
             print(f"  seed {seed} epoch {ep+1}/{epochs} loss={total/max(n,1):.4f}")
@@ -82,7 +82,7 @@ def main() -> None:
     p.add_argument("--data", type=Path, default=Path("data/scenarios"))
     p.add_argument("--out", type=Path, default=Path("model/checkpoints"))
     p.add_argument("--sensors-json", type=Path, default=Path("results/placement.json"))
-    p.add_argument("--epochs", type=int, default=20)
+    p.add_argument("--epochs", type=int, default=40)
     p.add_argument("--ensemble", type=int, default=5)
     p.add_argument("--physics-w", type=float, default=0.05)
     p.add_argument("--budget", type=int, default=10)

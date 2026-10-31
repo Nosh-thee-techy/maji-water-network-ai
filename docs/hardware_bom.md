@@ -1,16 +1,24 @@
-# Pressure-logger bill of materials (paper costing only)
+# Hardware bill of materials (paper costing only)
 
-No firmware is built in this repository. The node is specified so the
-capital-cost claim in the report can be checked.
+No firmware is built in this repository. The stack is specified so the
+capital-cost claim in the report can be checked. Full architecture:
+`docs/iot_stack.md`.
 
-**Sampling.** Not 1 Hz continuous. A 5-minute baseline matches the
-hydraulic step used in the twin. The node raises the rate (1 Hz burst
-for 30–60 s) only when pressure changes by more than ~0.5 m between
-slow samples. That is what a battery or a LoRaWAN duty cycle can
-actually carry.
+**Year-1 SKU is the inlet, not a 10-node pressure grid.** Detection is
+the after-fill inlet residual. Localisation pressure loggers come
+after that residual is trusted.
 
-**Target:** about US$60 per node, solar or primary-battery, chamber or
-post-mounted, LoRaWAN or NB-IoT.
+**Sampling (IWS-aware, not 1 Hz continuous).** Off-window 15-minute
+heartbeat. 1 Hz burst for 30–60 s on valve-open or ΔP ≳ 0.5 m. 1-minute
+samples from fill until a hydrograph change-point, then 1-minute for
+≥30 min on the after-fill plateau (that plateau *is* the leak). 5-minute
+for the rest of the open window. A battery or a LoRaWAN duty cycle can
+carry that; always-on 1 Hz cannot.
+
+**Pressure-node target:** about US$60 DIY, solar or primary-battery,
+**chamber** (not a roadside post — Kericho pilots lost unprotected
+master meters to theft). LoRaWAN or NB-IoT. Commercial equivalents
+are ~US$520–660 (ThingsLog-class), which is what a WSP actually buys.
 
 | Item | Example class | Qty | Est. USD |
 | --- | --- | --- | --- |
@@ -29,9 +37,19 @@ what makes a cheap logger useful for a transient; the twin itself
 runs on the 5-minute series.
 
 Connectivity is store-and-forward. A dropped uplink is a dropout in
-the observation model (`sim/observe.py`), not a lost day.
+the observation model (`sim/observe.py`), not a lost day. A missing
+after-fill window is a sensor-failure event, not a “no leak.”
 
-**DMA capital (target).** 10 nodes × US$60 = US$600 of hardware,
-before installation, SIM/LoRa fees, and software. The white paper’s
-“under US$1,000 of sensor hardware” holds only at the low end of this
-table and with LoRaWAN (no per-node cellular plan).
+**DMA capital (honest).**
+
+| SKU | What | Est. USD | Label |
+| --- | --- | --- | --- |
+| Detection-only | 1 inlet logger: pulse flow + pressure + valve position, chamber | 800–1,500 | estimated; **year-1** |
+| Detection + 5 DIY pressure | above + 5 × ~US$60 nodes | 1,200–1,900 | estimated |
+| White-paper “10 × US$60” | pressure nodes only, no inlet meter | 600 | estimated; **insufficient** |
+
+The white paper’s “under US$1,000 of sensor hardware” holds for
+detection-only if the bulk meter already pulses, or for detection +
+DIY pressure. It does not hold for a 10-node commercial grid
+(ThingsLog-class ~US$520–660/node). Inlet Qmin must be ≤ 0.2 L/s
+or the 0.40 L/s hook is below the meter’s floor.

@@ -14,7 +14,7 @@ from baseline.graph_distance import match_leaks, pipe_graph
 from placement.greedy import REFERENCE_Q_LPS, compute_signatures, greedy_place
 from sim.io import load_scenario
 from sim.network import JUNCTION_NAMES
-from sim.observe import make_observations
+from sim.observe import make_observations, valve_open_for_solver
 from sim.scenario import run_scenario
 
 
@@ -69,6 +69,7 @@ def evaluate_library(
                 frames["inlet_flow_lps"],
                 sensors,
                 seed=meta["seed"] + 17 * b,
+                duration_h=meta["duration_h"],
             )
             p_obs = obs["pressure_m"].to_numpy(dtype=float)
             q_obs = obs["inlet_flow_lps"].to_numpy(dtype=float)
@@ -82,6 +83,7 @@ def evaluate_library(
                 sensitivity=pack["signatures"],
                 candidate_nodes=pack["leak_nodes"],
                 duration_h=meta["duration_h"],
+                valve_open=valve_open_for_solver(obs),
             )
             pred_nodes = [n for n, _v in est.ranked[: max(1, len(truth_nodes))]] if est.detected else []
             if est.detected and not truth_nodes:

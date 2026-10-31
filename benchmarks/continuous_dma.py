@@ -19,7 +19,7 @@ from placement.greedy import compute_signatures, greedy_place
 from sim.io import save_scenario
 from sim.leaks import leaks_from_q_lps
 from sim.network import JUNCTION_NAMES, build_dma, customer_junctions
-from sim.observe import make_observations
+from sim.observe import make_observations, valve_open_for_solver
 from sim.scenario import run_scenario
 
 
@@ -61,7 +61,13 @@ def evaluate_continuous(data_dir: Path, out: Path) -> dict:
     rows = []
     for row in index["scenarios"]:
         meta, frames = load_scenario(data_dir, row["scenario_id"])
-        obs = make_observations(frames["pressure_m"], frames["inlet_flow_lps"], sensors, seed=meta["seed"])
+        obs = make_observations(
+            frames["pressure_m"],
+            frames["inlet_flow_lps"],
+            sensors,
+            seed=meta["seed"],
+            duration_h=24.0,
+        )
         times = meta["times_s"]
         p0 = noleak.pressure_m.reindex(times).interpolate().bfill().ffill()
         q0 = noleak.inlet_flow_lps.reindex(times).interpolate().bfill().ffill()
@@ -75,6 +81,7 @@ def evaluate_continuous(data_dir: Path, out: Path) -> dict:
             sensitivity=pack["signatures"],
             candidate_nodes=pack["leak_nodes"],
             duration_h=24.0,
+            valve_open=valve_open_for_solver(obs),
         )
         truth = [lk["node"] for lk in meta["leaks"]]
         pred = [n for n, _ in est.ranked[: max(1, len(truth))]] if est.detected else []

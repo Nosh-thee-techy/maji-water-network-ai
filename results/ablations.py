@@ -17,7 +17,7 @@ from placement.greedy import compute_signatures, greedy_place
 from sim.io import load_scenario
 from sim.leaks import leaks_from_q_lps
 from sim.network import JUNCTION_NAMES, build_dma
-from sim.observe import make_observations
+from sim.observe import make_observations, valve_open_for_solver
 from sim.scenario import run_scenario
 
 SENSORS_BUDGET = 10
@@ -29,7 +29,13 @@ NOISE_SEEDS = (11, 29)
 
 
 def _solve(sc, noleak, pack, sensors, seed, use_inlet_hook: bool):
-    obs = make_observations(sc.pressure_m, sc.inlet_flow_lps, sensors, seed=seed)
+    obs = make_observations(
+        sc.pressure_m,
+        sc.inlet_flow_lps,
+        sensors,
+        seed=seed,
+        duration_h=sc.duration_h,
+    )
     times = sc.times_s
     p0 = noleak.pressure_m.reindex(times).interpolate().bfill().ffill()
     q0 = noleak.inlet_flow_lps.reindex(times).interpolate().bfill().ffill()
@@ -44,6 +50,7 @@ def _solve(sc, noleak, pack, sensors, seed, use_inlet_hook: bool):
         candidate_nodes=pack["leak_nodes"],
         duration_h=sc.duration_h,
         use_inlet_hook=use_inlet_hook,
+        valve_open=valve_open_for_solver(obs),
     )
 
 

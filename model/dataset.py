@@ -59,6 +59,7 @@ def scenario_tensors(
         frames["inlet_flow_lps"],
         sensors,
         seed=obs_seed,
+        duration_h=meta["duration_h"],
     )
     p_true = frames["pressure_m"][names].to_numpy(dtype=np.float32)
     p_obs = obs["pressure_m"]

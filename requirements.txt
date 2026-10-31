@@ -1,0 +1,11 @@
+wntr>=1.2
+numpy
+pandas
+scipy
+pyarrow
+matplotlib
+plotly
+streamlit
+torch
+pyyaml
+networkx

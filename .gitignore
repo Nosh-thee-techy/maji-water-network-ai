@@ -1,0 +1,33 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+*.inp.bak
+*.bak
+.streamlit/
+.DS_Store
+Thumbs.db
+
+# Generated scenario libraries (keep a small sample under results/)
+data/scenarios/
+data/raw/
+data/tmp/
+*.parquet
+!results/**/*.png
+!results/**/*.json
+!results/**/*.md
+
+# Training artefacts
+model/checkpoints/
+*.pt
+*.pth
+runs/
+wandb/

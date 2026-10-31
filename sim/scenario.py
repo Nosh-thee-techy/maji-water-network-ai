@@ -8,6 +8,8 @@ sensors.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Mapping
 
 import pandas as pd
@@ -89,7 +91,9 @@ def run_scenario(
     apply_leaks(wn, leaks)
 
     sim = wntr.sim.EpanetSimulator(wn)
-    results = sim.run_sim()
+    # Unique prefix so two EPANET runs never clobber each other's temp.inp.
+    with TemporaryDirectory(prefix="maji_en_") as tmp:
+        results = sim.run_sim(file_prefix=str(Path(tmp) / "en"))
 
     junctions = list(JUNCTION_NAMES)
     pressure_raw = results.node["pressure"][junctions].astype(float)

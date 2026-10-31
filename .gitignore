@@ -10,6 +10,11 @@ venv/
 .env
 .idea/
 .vscode/
+temp.inp
+temp.bin
+temp.rpt
+temp.hyd
+sim/_probe_hook.py
 *.inp.bak
 *.bak
 .streamlit/

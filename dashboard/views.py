@@ -19,6 +19,27 @@ DEFAULT_INTRUSION_THRESHOLD_M = 7.0
 NEAR_CONTAMINATION = {"J11", "J15", "J16", "J17", "J14"}
 
 
+EVENT_LABELS = {
+    "leak": "Leak — leftover inlet flow persisted after tanks saturated",
+    "no_leak": "No leak — after-fill inlet residual below threshold",
+    "valve_did_not_open": "Valve did not open — scheduled window, no fill surge",
+    "sensor_failure": "Sensor failure — after-fill inlet record is missing",
+    "still_filling": "Still filling — hydrograph never dropped; no leftover yet",
+}
+
+
+def event_banner(event: str, leftover_lps: float, leftover_m3_per_day: float) -> dict:
+    """Crew/manager copy for the three IWS event types (+ still-filling)."""
+    return {
+        "event": event,
+        "label": EVENT_LABELS.get(event, event),
+        "leftover_lps": leftover_lps,
+        "leftover_m3_per_day": leftover_m3_per_day,
+        "is_leak": event == "leak",
+        "is_actionable_fault": event in {"valve_did_not_open", "sensor_failure"},
+    }
+
+
 def ranked_dig_list(estimate_ranked: list[tuple[str, float]], hop_radius: int = 2) -> list[dict]:
     rows = []
     for i, (node, q) in enumerate(estimate_ranked):

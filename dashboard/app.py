@@ -22,6 +22,7 @@ from baseline.emitter_calibrate import estimate_leaks
 from baseline.evaluate import build_noleak_and_sensitivity
 from dashboard.views import (
     DEFAULT_INTRUSION_THRESHOLD_M,
+    event_banner,
     intrusion_flags,
     intrusion_summary,
     ranked_dig_list,
@@ -29,7 +30,7 @@ from dashboard.views import (
 )
 from sim.io import load_scenario
 from sim.network import JUNCTION_NAMES, RESERVOIR_ID, RESERVOIR_XY, junction_coordinates, pipe_table
-from sim.observe import make_observations
+from sim.observe import make_observations, valve_open_for_solver
 
 
 st.set_page_config(page_title="M.A.J.I", layout="wide")
@@ -140,6 +141,7 @@ def main() -> None:
         frames["inlet_flow_lps"],
         sensors,
         seed=meta["seed"] + budget,
+        duration_h=meta["duration_h"],
     )
     p0 = engine["noleak"].pressure_m.reindex(meta["times_s"]).interpolate().bfill().ffill()
     q0 = engine["noleak"].inlet_flow_lps.reindex(meta["times_s"]).interpolate().bfill().ffill()
@@ -153,6 +155,7 @@ def main() -> None:
         sensitivity=engine["signatures"],
         candidate_nodes=engine["leak_nodes"],
         duration_h=meta["duration_h"],
+        valve_open=valve_open_for_solver(obs),
     )
     inlet = frames["inlet_flow_lps"].to_numpy(dtype=float)
     press_s = float(np.sum(inlet > 0.05) * meta["timestep_s"])
@@ -161,37 +164,54 @@ def main() -> None:
     flags = intrusion_flags(frames["pressure_m"], threshold_m=threshold)
     risk_nodes = [r["node"] for r in intrusion_summary(flags) if r["hours"] > 0.5]
 
+    banner = event_banner(est.event, est.q_total_lps, est.leftover_m3_per_day)
+    t_h = np.asarray(meta["times_s"]) / 3600.0
     crew, manager, health = st.tabs(["Crew — dig here", "Manager — water balance", "Health — intrusion risk"])
 
     with crew:
         st.subheader("Ranked dig list")
-        if not est.detected:
-            st.success("No leak detected (after-fill inlet flow below threshold).")
-        else:
+        if banner["is_leak"]:
             st.dataframe(pd.DataFrame(ranked_dig_list(est.ranked)), hide_index=True, width="stretch")
+        elif banner["is_actionable_fault"]:
+            st.warning(banner["label"])
+        else:
+            st.success(banner["label"])
         st.plotly_chart(
             _network_figure(sensors, truth_leaks, [n for n, _ in est.ranked[:2]], "DMA · sensors (green) · true leak (yellow) · predicted (red ring via rank)"),
             width="stretch",
         )
+        sat_note = (
+            f"t_sat from hydrograph at {[round(t / 3600, 2) for t in est.t_sat_s]} h"
+            if est.used_change_point and est.t_sat_s
+            else "clock fallback (75 min) — no knee on the inlet"
+        )
         st.markdown(
             f"True leak nodes: `{truth_leaks or 'none (zero-leak scenario)'}` · "
-            f"after-fill inlet residual **{est.q_total_lps:.2f} L/s**"
+            f"after-fill inlet residual **{est.q_total_lps:.2f} L/s** · {sat_note}"
         )
-        t_h = np.asarray(meta["times_s"]) / 3600.0
         fig = go.Figure()
         for s in sensors[:6]:
             fig.add_trace(go.Scatter(x=t_h, y=obs["pressure_m"][s], name=s, mode="lines"))
-        fig.update_layout(height=280, title="Noisy sensor pressure (what the solver sees)", yaxis_title="m")
+        fig.update_layout(
+            height=280,
+            title="Uplinked sensor pressure (IWS duty cycle — off-window is a 15 min heartbeat)",
+            yaxis_title="m",
+        )
         st.plotly_chart(fig, width="stretch")
 
     with manager:
         st.subheader("IWA-style water balance (simulated)")
         view = water_balance_view(meta["water_balance_m3"], leaked_hat)
-        c1, c2, c3, c4 = st.columns(4)
+        c1, c2, c3, c4, c5 = st.columns(5)
         c1.metric("Supplied", f"{view['supplied_m3']:.1f} m³")
         c2.metric("Leak (true)", f"{view['leaked_true_m3']:.1f} m³")
         c3.metric("Leak (estimate)", f"{view['leaked_hat_m3']:.1f} m³")
-        c4.metric("Billed", f"{view['billed_m3']:.1f} m³")
+        c4.metric("Leftover (PBC)", f"{est.leftover_m3_per_day:.2f} m³/day")
+        c5.metric("Billed", f"{view['billed_m3']:.1f} m³")
+        st.caption(
+            "Leftover m³/day is after-fill inlet residual × open hours, scaled to one day. "
+            "That is the WASREB PBC unit (m³/day leakage reduced), not a 24 h always-on volume."
+        )
         bal = pd.DataFrame(
             {
                 "component": ["Leak (real loss)", "Unmetered (true)", "Meter error (true)", "Billed"],
@@ -207,7 +227,18 @@ def main() -> None:
         st.caption(view["note"])
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=t_h, y=frames["inlet_flow_lps"], name="inlet flow", line=dict(color="#1f4e79")))
-        fig.update_layout(height=280, title="Inlet flow — after each fill window, leftover flow is the leak", yaxis_title="L/s")
+        for t_sat in est.t_sat_s:
+            fig.add_vline(
+                x=t_sat / 3600.0,
+                line_dash="dash",
+                line_color="#c0392b",
+                annotation_text="t_sat",
+            )
+        fig.update_layout(
+            height=280,
+            title="Inlet flow — knee is tank saturation; leftover after t_sat is the leak",
+            yaxis_title="L/s",
+        )
         st.plotly_chart(fig, width="stretch")
 
     with health:

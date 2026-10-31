@@ -1,0 +1,149 @@
+{
+  "sensors": [
+    "J17",
+    "J06",
+    "J08",
+    "J09",
+    "J04",
+    "J11",
+    "J15",
+    "J03",
+    "J10",
+    "J02"
+  ],
+  "leak_size": {
+    "0.056": {
+      "hook": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      }
+    },
+    "0.15": {
+      "hook": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      }
+    },
+    "0.25": {
+      "hook": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      }
+    },
+    "0.4": {
+      "hook": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 4.25,
+        "mean_hops_all": 4.25,
+        "frac_within_3_detected": 0.375
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 0.0,
+        "mean_hops_detected": null,
+        "mean_hops_all": 6.0,
+        "frac_within_3_detected": 0.0
+      }
+    },
+    "0.8": {
+      "hook": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 1.375,
+        "mean_hops_all": 1.375,
+        "frac_within_3_detected": 0.875
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 1.5,
+        "mean_hops_all": 1.5,
+        "frac_within_3_detected": 0.875
+      }
+    },
+    "1.5": {
+      "hook": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 0.875,
+        "mean_hops_all": 0.875,
+        "frac_within_3_detected": 1.0
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 0.875,
+        "mean_hops_all": 0.875,
+        "frac_within_3_detected": 1.0
+      }
+    },
+    "2.5": {
+      "hook": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 1.0,
+        "mean_hops_all": 1.0,
+        "frac_within_3_detected": 1.0
+      },
+      "pressure_only": {
+        "n": 8,
+        "tpr": 1.0,
+        "mean_hops_detected": 0.75,
+        "mean_hops_all": 0.75,
+        "frac_within_3_detected": 1.0
+      }
+    }
+  },
+  "library_hook_vs_pressure": {
+    "hook": {
+      "n": 80,
+      "n_zero": 14,
+      "n_leak": 66,
+      "fpr": 0.0,
+      "tpr": 1.0,
+      "mean_hops_detected": 1.1742424242424243,
+      "frac_within_3_detected": 0.8939393939393939
+    },
+    "pressure_only": {
+      "n": 80,
+      "n_zero": 14,
+      "n_leak": 66,
+      "fpr": 0.0,
+      "tpr": 1.0,
+      "mean_hops_detected": 0.8257575757575758,
+      "frac_within_3_detected": 0.9393939393939394
+    }
+  },
+  "label": "simulated"
+}

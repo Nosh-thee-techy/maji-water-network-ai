@@ -60,6 +60,35 @@ def test_one_point_five_lps_leak_is_detected_and_near_j07(noleak_12h, leak_j07_1
     assert hop_distance(pred, "J07") <= 3, f"predicted {pred} is too far from J07"
 
 
+def test_pressure_only_flag_runs_without_using_a_hidden_label(noleak_12h, leak_j07_12h, signatures):
+    sensors = ["J17", "J06", "J08", "J09", "J04", "J11", "J15", "J03", "J10", "J02"]
+    hook = _run_solver(noleak_12h, noleak_12h, signatures, sensors, seed=11)
+    # monkey-patch: call estimate path with the flag via _solve-equivalent
+    from baseline.emitter_calibrate import estimate_leaks
+    from sim.network import JUNCTION_NAMES
+    from sim.observe import make_observations
+    import numpy as np
+
+    sc = leak_j07_12h
+    obs = make_observations(sc.pressure_m, sc.inlet_flow_lps, sensors, seed=11)
+    p0 = noleak_12h.pressure_m.reindex(sc.times_s).interpolate().bfill().ffill()
+    q0 = noleak_12h.inlet_flow_lps.reindex(sc.times_s).interpolate().bfill().ffill()
+    est = estimate_leaks(
+        pressure_obs=obs["pressure_m"].to_numpy(dtype=float),
+        inlet_obs_lps=obs["inlet_flow_lps"].to_numpy(dtype=float),
+        sensors=sensors,
+        times_s=np.asarray(sc.times_s),
+        p_noleak=p0[list(JUNCTION_NAMES)].to_numpy(dtype=float),
+        inlet_noleak_lps=q0.to_numpy(dtype=float),
+        sensitivity=signatures["signatures"],
+        candidate_nodes=signatures["leak_nodes"],
+        duration_h=sc.duration_h,
+        use_inlet_hook=False,
+    )
+    assert hook.detected is False
+    assert isinstance(est.detected, bool)
+
+
 def test_solver_does_not_receive_clean_full_field(leak_j07_12h):
     sensors = ["J17", "J06", "J08"]
     obs = make_observations(

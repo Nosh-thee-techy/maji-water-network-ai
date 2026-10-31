@@ -65,6 +65,39 @@ Detection is the scientific hook (after-fill inlet residual). Localisation is
 a sparse L1 fit of a sensitivity matrix. This is **not** a single “X% accuracy”
 claim.
 
+### Localisation vs leak size (budget 10)
+
+Same detect threshold (0.35 L/s). Four sites × two noise seeds. Figure:
+`fig_localisation_vs_leak_size.png`.
+
+| Orifice at 20 m | ≈ % of peak inflow | Hook TPR | Hook mean hops (all) | Pressure-only TPR | Pressure-only hops (all) |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 0.056 L/s | 1% | 0.00 | 6 (miss) | 0.00 | 6 (miss) |
+| 0.15 L/s | ~3% | 0.00 | 6 | 0.00 | 6 |
+| 0.25 L/s | ~4% | 0.00 | 6 | 0.00 | 6 |
+| 0.40 L/s | ~7% | **1.00** | 4.25 | **0.00** | 6 |
+| 0.80 L/s | ~14% | 1.00 | 1.38 | 1.00 | 1.50 |
+| 1.50 L/s | ~27% | 1.00 | 0.88 | 1.00 | 0.88 |
+| 2.50 L/s | ~45% | 1.00 | 1.00 | 1.00 | 0.75 |
+
+The 1% white-paper target fails for both signals. The hook’s distinct work is
+**detection at 0.40 L/s**, where pressure-only still reports no leak.
+Localisation at that size is still poor (4.25 hops). From 0.80 L/s up, both
+methods work.
+
+### Hook vs pressure-only on the library (first 80 of 300, budget 10)
+
+Library leaks are 0.8–3.0 L/s — the regime where pressure already works.
+
+| Method | n | Zero-leak FPR | TPR | Mean hops (detected) | Within 3 hops |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| After-fill inlet hook | 80 | 0.00 | 1.00 | 1.17 | 89.4% |
+| Pressure only (same 0.35 L/s threshold on the L1 fit) | 80 | 0.00 | 1.00 | 0.83 | 93.9% |
+
+On large leaks, pressure-only localises slightly better. Do not hide that.
+The hook is not a better localiser; it is an earlier detector. Figure:
+`fig_hook_vs_pressure_only.png`.
+
 ### Water-balance leak attribution
 
 | Metric | Result | Label |

@@ -55,6 +55,25 @@
     "status": "not_run",
     "reason": "Official year-long SCADA scoring not completed in the time budget."
   },
+  "leak_size_sweep_budget_10": {
+    "label": "simulated",
+    "n_per_size": 8,
+    "sites": ["J05", "J07", "J12", "J17"],
+    "by_size_lps": {
+      "0.056": {"hook_tpr": 0.0, "pressure_only_tpr": 0.0, "hook_hops_all": 6.0, "pressure_only_hops_all": 6.0},
+      "0.15": {"hook_tpr": 0.0, "pressure_only_tpr": 0.0, "hook_hops_all": 6.0, "pressure_only_hops_all": 6.0},
+      "0.25": {"hook_tpr": 0.0, "pressure_only_tpr": 0.0, "hook_hops_all": 6.0, "pressure_only_hops_all": 6.0},
+      "0.40": {"hook_tpr": 1.0, "pressure_only_tpr": 0.0, "hook_hops_all": 4.25, "pressure_only_hops_all": 6.0},
+      "0.80": {"hook_tpr": 1.0, "pressure_only_tpr": 1.0, "hook_hops_all": 1.375, "pressure_only_hops_all": 1.5},
+      "1.50": {"hook_tpr": 1.0, "pressure_only_tpr": 1.0, "hook_hops_all": 0.875, "pressure_only_hops_all": 0.875},
+      "2.50": {"hook_tpr": 1.0, "pressure_only_tpr": 1.0, "hook_hops_all": 1.0, "pressure_only_hops_all": 0.75}
+    },
+    "note": "1% inflow is invisible. Hook uniquely detects 0.40 L/s. Large leaks: pressure-only localises as well or better."
+  },
+  "hook_vs_pressure_library_80": {
+    "hook": {"n": 80, "fpr": 0.0, "tpr": 1.0, "mean_hops": 1.1742424242424243, "frac_within_3": 0.8939393939393939},
+    "pressure_only": {"n": 80, "fpr": 0.0, "tpr": 1.0, "mean_hops": 0.8257575757575758, "frac_within_3": 0.9393939393939394}
+  },
   "ltown_synthetic_not_battledim": {
     "status": "ran",
     "n_junctions": 782,

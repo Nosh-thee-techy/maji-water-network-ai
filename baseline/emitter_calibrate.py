@@ -79,6 +79,7 @@ def estimate_leaks(
     duration_h: float,
     detect_threshold_lps: float = DETECT_THRESHOLD_LPS,
     l1_weight: float = L1_WEIGHT,
+    use_inlet_hook: bool = True,
 ) -> LeakEstimate:
     junc = list(JUNCTION_NAMES)
     sensor_idx = [junc.index(s) for s in sensors]
@@ -88,9 +89,7 @@ def estimate_leaks(
     # Continuous-supply runs have no after-fill window — fall back to the
     # whole-horizon inlet residual against the no-leak model.
     flow_mask = after if after.any() else np.ones(len(after), dtype=bool)
-    q_total = nanmean(inlet_obs_lps[flow_mask] - inlet_noleak_lps[flow_mask])
-    q_total = max(0.0, q_total)
-    detected = q_total >= detect_threshold_lps
+    q_flow = max(0.0, nanmean(inlet_obs_lps[flow_mask] - inlet_noleak_lps[flow_mask]))
 
     # Pressure residual during fill (richer headloss) at the sensors.
     p_mask = fill if fill.any() else flow_mask
@@ -104,34 +103,57 @@ def estimate_leaks(
     S = -sensitivity[:, sensor_idx].T  # [S, C]
     n_c = len(candidate_nodes)
 
-    if not detected:
-        zeros = {n: 0.0 for n in candidate_nodes}
-        return LeakEstimate(
-            q_lps=zeros,
-            q_total_lps=q_total,
-            detected=False,
-            ranked=[],
-            residual_norm_m=float(np.linalg.norm(r)),
+    def fit_q(q_total_target: float | None) -> np.ndarray:
+        def objective(q: np.ndarray) -> float:
+            pred = S @ q
+            loss = float(np.sum((pred - r) ** 2) + l1_weight * np.sum(q))
+            if q_total_target is not None:
+                loss += 0.4 * float((q.sum() - q_total_target) ** 2)
+            return loss
+
+        start = q_total_target if q_total_target and q_total_target > 0 else 0.3
+        q0 = np.full(n_c, start / n_c)
+        res = minimize(
+            objective,
+            q0,
+            method="L-BFGS-B",
+            bounds=[(0.0, 8.0)] * n_c,
+            options={"maxiter": 400},
         )
+        return np.clip(res.x, 0.0, None)
 
-    def objective(q: np.ndarray) -> float:
-        pred = S @ q
-        return float(np.sum((pred - r) ** 2) + l1_weight * np.sum(q) + 0.4 * (q.sum() - q_total) ** 2)
-
-    q0 = np.full(n_c, q_total / n_c)
-    res = minimize(
-        objective,
-        q0,
-        method="L-BFGS-B",
-        bounds=[(0.0, 8.0)] * n_c,
-        options={"maxiter": 400},
-    )
-    q = np.clip(res.x, 0.0, None)
-    # Re-sparsify: keep coefficients that explain at least 8% of total.
-    thresh = max(0.08 * q.sum(), 0.15)
-    q[q < thresh] = 0.0
-    if q.sum() > 0:
-        q *= q_total / q.sum()
+    if use_inlet_hook:
+        q_total = q_flow
+        detected = q_total >= detect_threshold_lps
+        if not detected:
+            return LeakEstimate(
+                q_lps={n: 0.0 for n in candidate_nodes},
+                q_total_lps=q_total,
+                detected=False,
+                ranked=[],
+                residual_norm_m=float(np.linalg.norm(r)),
+            )
+        q = fit_q(q_total)
+        thresh = max(0.08 * q.sum(), 0.15)
+        q[q < thresh] = 0.0
+        if q.sum() > 0:
+            q *= q_total / q.sum()
+    else:
+        # Pressure-only: same 0.35 L/s detect threshold, but the scalar
+        # comes from the L1 fit, not the after-fill inlet residual.
+        q = fit_q(None)
+        q_total = float(q.sum())
+        detected = q_total >= detect_threshold_lps
+        if not detected:
+            return LeakEstimate(
+                q_lps={n: 0.0 for n in candidate_nodes},
+                q_total_lps=q_total,
+                detected=False,
+                ranked=[],
+                residual_norm_m=float(np.linalg.norm(r)),
+            )
+        thresh = max(0.08 * q.sum(), 0.15)
+        q[q < thresh] = 0.0
 
     q_map = {n: float(qi) for n, qi in zip(candidate_nodes, q)}
     ranked = sorted(q_map.items(), key=lambda kv: kv[1], reverse=True)

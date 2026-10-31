@@ -11,7 +11,7 @@ from baseline.emitter_calibrate import estimate_leaks
 from baseline.graph_distance import hop_distance
 from placement.greedy import compute_signatures
 from sim.network import JUNCTION_NAMES
-from sim.observe import make_observations
+from sim.observe import make_observations, valve_open_for_solver
 from tests.conftest import DURATION_H
 
 
@@ -21,7 +21,13 @@ def signatures():
 
 
 def _run_solver(sc, noleak, pack, sensors, seed):
-    obs = make_observations(sc.pressure_m, sc.inlet_flow_lps, sensors, seed=seed)
+    obs = make_observations(
+        sc.pressure_m,
+        sc.inlet_flow_lps,
+        sensors,
+        seed=seed,
+        duration_h=sc.duration_h,
+    )
     times = sc.times_s
     p0 = noleak.pressure_m.reindex(times).interpolate().bfill().ffill()
     q0 = noleak.inlet_flow_lps.reindex(times).interpolate().bfill().ffill()
@@ -35,6 +41,7 @@ def _run_solver(sc, noleak, pack, sensors, seed):
         sensitivity=pack["signatures"],
         candidate_nodes=pack["leak_nodes"],
         duration_h=sc.duration_h,
+        valve_open=valve_open_for_solver(obs),
     )
 
 
@@ -70,7 +77,9 @@ def test_pressure_only_flag_runs_without_using_a_hidden_label(noleak_12h, leak_j
     import numpy as np
 
     sc = leak_j07_12h
-    obs = make_observations(sc.pressure_m, sc.inlet_flow_lps, sensors, seed=11)
+    obs = make_observations(
+        sc.pressure_m, sc.inlet_flow_lps, sensors, seed=11, duration_h=sc.duration_h
+    )
     p0 = noleak_12h.pressure_m.reindex(sc.times_s).interpolate().bfill().ffill()
     q0 = noleak_12h.inlet_flow_lps.reindex(sc.times_s).interpolate().bfill().ffill()
     est = estimate_leaks(
@@ -84,6 +93,7 @@ def test_pressure_only_flag_runs_without_using_a_hidden_label(noleak_12h, leak_j
         candidate_nodes=signatures["leak_nodes"],
         duration_h=sc.duration_h,
         use_inlet_hook=False,
+        valve_open=valve_open_for_solver(obs),
     )
     assert hook.detected is False
     assert isinstance(est.detected, bool)

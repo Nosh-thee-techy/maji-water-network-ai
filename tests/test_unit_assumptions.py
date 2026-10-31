@@ -86,8 +86,13 @@ def test_observations_never_include_hidden_labels():
         "pressure_sigma_m",
         "flow_sigma_lps",
         "dropout_p",
+        "duty_cycle",
         "pressure_m",
         "inlet_flow_lps",
+        "valve_open",
+        "duty_keep",
+        "after_hold",
+        "t_sat_s",
     }
     assert "J07" not in obs["pressure_m"].columns
     assert list(obs["pressure_m"].columns) == ["J01"]

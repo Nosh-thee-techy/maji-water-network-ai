@@ -9,3 +9,4 @@ streamlit
 torch
 pyyaml
 networkx
+pytest

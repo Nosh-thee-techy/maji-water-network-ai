@@ -151,6 +151,16 @@ Multi-topology generalisation is future work.
 
 ---
 
+## Tests (what was actually checked)
+
+`python -m pytest tests -v` runs EPANET, not just mocks.
+
+What passed: mass-balance residual; after-fill inlet ≈ 0 without a leak and ≈ orifice flow with one; off-window pressure clamped to 0; meter bias and unmetered tags do not change hydraulics; solvers never receive leak labels or the clean field; zero-leak scenarios are not called leaks; a 1.5 L/s leak at J07 is found within 3 hops from noisy sensors; a **1% of inflow** leak stays below 0.3 m sensor noise; the 300-scenario library has a real zero-leak class.
+
+What the suite caught: customer volume is **not** independent of a leak. PDD lowers delivered household volume by ~3% for a 1.5 L/s leak. The report must not say the two are decoupled.
+
+What the suite cannot do: field validation, official BattLeDIM scoring, hardware bench tests.
+
 ## How to reproduce
 
 ```bash

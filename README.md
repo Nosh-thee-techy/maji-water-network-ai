@@ -30,6 +30,7 @@ Leak orifices in the library are **0.8–3.0 L/s at 20 m**, not 1% of DMA inflow
 ```bash
 python -m pip install -r requirements.txt
 python -m sim.smoke_network
+python -m pytest tests -v
 ```
 
 Regenerate and evaluate (several minutes):

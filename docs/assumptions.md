@@ -21,6 +21,7 @@ Updated as the build proceeds. Dates are 2026.
 
 - Household tanks are **not** tank elements. Demand is a pattern that is active only for the first N minutes of each supply window, then zero. This is the storage-limited simplification named in the white paper and must stay visible in code comments and the report.
 - Pressure-driven demand (EPANET 2.2 PDD), required pressure 20 m, minimum 0 m.
+- **A leak slightly reduces delivered customer volume** under PDD (less residual head in the fill window). A 1.5 L/s leak at J07 cut 12 h customer volume by about 3%. Tests require that customer volume does not *rise* with a leak, and that the PDD drop stays under 5%. We do not claim leak and demand are independent.
 
 ## Leaks
 

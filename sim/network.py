@@ -52,42 +52,47 @@ _JUNCTIONS: dict[str, dict] = {
 
 # (start, end, length_m, diameter_m). Lengths are rounded schematic values,
 # not Euclidean — they stand in for real routing around streets.
+# Diameters are small-district (50–110 mm), not transmission mains.
+# The first-pass 80–200 mm layout had ~0.06 m of headloss at peak
+# demand, so a leak was invisible against 0.3 m sensor noise. These
+# sizes put peak headloss in the 2–8 m range, which is what leak
+# localisation actually needs.
 _PIPES: list[tuple[str, str, str, float, float]] = [
     # inlet
-    (INLET_PIPE, RESERVOIR_ID, INLET_JUNCTION, 90.0, 0.200),
+    (INLET_PIPE, RESERVOIR_ID, INLET_JUNCTION, 90.0, 0.080),
     # north spine
-    ("P01", "J00", "J01", 110.0, 0.150),
-    ("P02", "J01", "J02", 100.0, 0.150),
-    ("P03", "J02", "J03", 100.0, 0.100),
+    ("P01", "J00", "J01", 110.0, 0.090),
+    ("P02", "J01", "J02", 100.0, 0.080),
+    ("P03", "J02", "J03", 100.0, 0.050),
     # mid spine
-    ("P04", "J00", "J04", 90.0, 0.150),
-    ("P05", "J04", "J05", 100.0, 0.150),
-    ("P06", "J05", "J06", 100.0, 0.100),
-    ("P07", "J06", "J07", 100.0, 0.080),
+    ("P04", "J00", "J04", 90.0, 0.090),
+    ("P05", "J04", "J05", 100.0, 0.080),
+    ("P06", "J05", "J06", 100.0, 0.065),
+    ("P07", "J06", "J07", 100.0, 0.050),
     # south spine
-    ("P08", "J04", "J08", 80.0, 0.150),
-    ("P09", "J08", "J09", 100.0, 0.100),
-    ("P10", "J09", "J10", 100.0, 0.100),
-    ("P11", "J08", "J11", 80.0, 0.100),
-    ("P12", "J11", "J12", 100.0, 0.100),
-    ("P13", "J12", "J13", 100.0, 0.080),
-    ("P14", "J13", "J14", 100.0, 0.080),
+    ("P08", "J04", "J08", 80.0, 0.080),
+    ("P09", "J08", "J09", 100.0, 0.065),
+    ("P10", "J09", "J10", 100.0, 0.050),
+    ("P11", "J08", "J11", 80.0, 0.065),
+    ("P12", "J11", "J12", 100.0, 0.050),
+    ("P13", "J12", "J13", 100.0, 0.050),
+    ("P14", "J13", "J14", 100.0, 0.040),
     # south-west branch
-    ("P15", "J11", "J15", 80.0, 0.080),
-    ("P16", "J15", "J16", 80.0, 0.080),
-    ("P17", "J16", "J17", 80.0, 0.080),
+    ("P15", "J11", "J15", 80.0, 0.050),
+    ("P16", "J15", "J16", 80.0, 0.040),
+    ("P17", "J16", "J17", 80.0, 0.040),
     # verticals that close the loops
-    ("P18", "J01", "J04", 80.0, 0.100),
-    ("P19", "J02", "J05", 80.0, 0.100),
-    ("P20", "J03", "J06", 80.0, 0.080),
-    ("P21", "J05", "J09", 80.0, 0.100),
-    ("P22", "J06", "J10", 80.0, 0.080),
-    ("P23", "J09", "J12", 80.0, 0.080),
-    ("P24", "J10", "J13", 80.0, 0.080),
+    ("P18", "J01", "J04", 80.0, 0.065),
+    ("P19", "J02", "J05", 80.0, 0.050),
+    ("P20", "J03", "J06", 80.0, 0.040),
+    ("P21", "J05", "J09", 80.0, 0.050),
+    ("P22", "J06", "J10", 80.0, 0.040),
+    ("P23", "J09", "J12", 80.0, 0.050),
+    ("P24", "J10", "J13", 80.0, 0.040),
 ]
 
 HW_ROUGHNESS = 120.0  # Hazen–Williams C, aged metallic / mixed
-RESERVOIR_HEAD_M = 42.0
+RESERVOIR_HEAD_M = 38.0
 RESERVOIR_XY = (0.0, 220.0)
 
 # Required / minimum pressure for EPANET 2.2 pressure-driven demand.

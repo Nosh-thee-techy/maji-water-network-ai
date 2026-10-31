@@ -7,7 +7,9 @@ Updated as the build proceeds. Dates are 2026.
 
 - **One schematic DMA.** 18 junctions, 25 pipes, one reservoir. Looped core plus two dead-end laterals. Not a traced utility GIS extract. Multi-topology generalisation is future work.
 - **Hazen–Williams C = 120** on every pipe (aged metallic / mixed). No per-pipe calibration.
-- **Reservoir head 42 m.** With junction elevations 13.5–20 m this gives roughly 15–30 m of nodal head when the inlet is open.
+- **Pipe diameters 40–110 mm.** A first-pass 80–200 mm layout had ~0.06 m peak headloss, so leak signatures sat below the 0.3 m sensor noise. Diameters were reduced so peak headloss is a few metres — typical of a small aged district, and the minimum stiffness that makes sparse-pressure localisation a real inverse problem rather than a noise-fitting exercise.
+- **Reservoir head 38 m.** With junction elevations 13.5–20 m this gives roughly 12–22 m of nodal head when the inlet is open.
+- **Off-window pressure is set to 0 m after the EPANET run.** With the inlet closed and no outflow, EPANET reports a trapped residual head that is not a drained pipe. We treat off-window rows as slack / atmospheric. This is a post-process, not a two-phase model.
 
 ## Intermittent supply
 

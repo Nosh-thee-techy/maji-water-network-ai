@@ -1,0 +1,86 @@
+{
+  "summary": {
+    "n": 4,
+    "duration_h": 12.0,
+    "purpose": "dashboard demo \u2014 not the 300-scenario library",
+    "out_dir": "results\\demo"
+  },
+  "scenarios": [
+    {
+      "scenario_id": "demo-clean",
+      "label": "Clean window \u2014 tanks fill, no leftover",
+      "seed": 2026,
+      "n_leaks": 0,
+      "leak_nodes": [],
+      "fill_minutes": 75.0,
+      "water_balance_m3": {
+        "supplied": 24.304361582188854,
+        "leaked": 0.0,
+        "customer": 24.304351772298105,
+        "unmetered": 0.0,
+        "metered_true": 24.304351772298105,
+        "billed": 23.33217770140618,
+        "meter_error": 0.9721740708919242,
+        "residual": 9.80989074861327e-06
+      }
+    },
+    {
+      "scenario_id": "demo-leak",
+      "label": "Leak \u2014 1.5 L/s leftover at J07",
+      "seed": 2026,
+      "n_leaks": 1,
+      "leak_nodes": [
+        "J07"
+      ],
+      "fill_minutes": 75.0,
+      "water_balance_m3": {
+        "supplied": 44.00025922805071,
+        "leaked": 20.47130456907538,
+        "customer": 23.52895603849689,
+        "unmetered": 0.42169519350863993,
+        "metered_true": 23.10726084498825,
+        "billed": 22.18297041118872,
+        "meter_error": 0.9242904337995306,
+        "residual": -1.3795215600964639e-06
+      }
+    },
+    {
+      "scenario_id": "demo-longfill",
+      "label": "Long fill \u2014 120 min tanks, same leak",
+      "seed": 2026,
+      "n_leaks": 1,
+      "leak_nodes": [
+        "J07"
+      ],
+      "fill_minutes": 120.0,
+      "water_balance_m3": {
+        "supplied": 57.70939397625625,
+        "leaked": 20.063071028613066,
+        "customer": 37.64632739616367,
+        "unmetered": 0.0,
+        "metered_true": 37.64632739616367,
+        "billed": 36.14047430031712,
+        "meter_error": 1.5058530958465468,
+        "residual": -4.448520485311747e-06
+      }
+    },
+    {
+      "scenario_id": "demo-valve",
+      "label": "Valve did not open \u2014 no fill surge",
+      "seed": 2026,
+      "n_leaks": 0,
+      "leak_nodes": [],
+      "fill_minutes": 75.0,
+      "water_balance_m3": {
+        "supplied": 24.304361582188854,
+        "leaked": 0.0,
+        "customer": 24.304351772298105,
+        "unmetered": 0.0,
+        "metered_true": 24.304351772298105,
+        "billed": 23.33217770140618,
+        "meter_error": 0.9721740708919242,
+        "residual": 9.80989074861327e-06
+      }
+    }
+  ]
+}

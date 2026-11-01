@@ -17,12 +17,17 @@ temp.hyd
 sim/_probe_hook.py
 *.inp.bak
 *.bak
-.streamlit/
+.streamlit/*
+!.streamlit/config.toml
 .DS_Store
 Thumbs.db
 
+# Runtime dashboard event store
+results/events.json
+
 # Generated scenario libraries (keep a small sample under results/)
 data/scenarios/
+data/recon/
 data/scenarios24/
 data/continuous/
 data/raw/
@@ -32,9 +37,11 @@ data/tmp/
 !results/**/*.json
 !results/**/*.md
 
-# Training artefacts
-model/checkpoints/
+# Training artefacts (keep the pressure-twin weights so the operator UI can load)
+model/checkpoints/*
+!model/checkpoints/gnn_recon.pt
 *.pt
+!model/checkpoints/gnn_recon.pt
 *.pth
 runs/
 wandb/

@@ -43,9 +43,11 @@ Customer demand is a 75-minute pattern at the start of each 05:00–09:00 and
 
 ## Methodology & validation (simulated intermittent DMA)
 
-Library: 300 scenarios × 48 h × 5 min, 57 zero-leak (19%). Solvers see noisy
-pressure at the placed sensors plus noisy inlet flow (σ_P = 0.30 m, σ_Q = 0.15 L/s,
-3% dropouts). One topology only.
+Library: 300 scenarios × 48 h × 5 min, 57 zero-leak (19%). The table below was
+scored under i.i.d. 3% radio dropouts (σ_P = 0.30 m, σ_Q = 0.15 L/s). Solvers
+now see an IWS chamber-logger duty cycle instead; that model is scored on a
+separate live 24 × 12 h mixed-fill set further down. Do not blend the two.
+One topology only.
 
 ### Localisation error vs sensor count — emitter-calibration baseline
 
@@ -59,7 +61,9 @@ after-fill inlet-flow detector (threshold 0.35 L/s).
 | 15 | 0.30 | 98.4% | 0.00 | 1.00 | simulated |
 | 18 (all junctions) | 0.23 | 97.5% | 0.00 | 1.00 | simulated |
 
-Source: `results/baseline_eval.json`. Figure: `fig_localisation_vs_sensors.png`.
+Source: `results/baseline_eval.json` (i.i.d. 3% dropouts). Figure:
+`fig_localisation_vs_sensors.png`. Observation-model note is slightly stale
+relative to the duty-cycle solver; see the live duty-cycle table below.
 
 Detection is the scientific hook (after-fill inlet residual). Localisation is
 a sparse L1 fit of a sensitivity matrix. This is **not** a single “X% accuracy”
@@ -97,6 +101,47 @@ Library leaks are 0.8–3.0 L/s — the regime where pressure already works.
 On large leaks, pressure-only localises slightly better. Do not hide that.
 The hook is not a better localiser; it is an earlier detector. Figure:
 `fig_hook_vs_pressure_only.png`.
+
+### Duty-cycle observe + mixed fill (live 24 × 12 h)
+
+Chamber-logger uplinks (off-window 15 min heartbeat, dense through fill and
+30 min after `t_sat`), mixed tank-fill 45–150 min, budget 10. Source:
+`results/duty_cycle_eval.json`. **Do not blend** with the 300 × 48 h table.
+
+| Metric | Result | Label |
+| --- | --- | --- |
+| TPR | 1.00 (18/18) | simulated, duty-cycle, mixed fill |
+| FPR | 0.00 (0/6) | simulated; one 45-min zero-leak window was `sensor_failure`, not a leak |
+| Mean hops (detected) | 0.81 | simulated |
+| Within 3 hops | 94.4% (17/18) | simulated; one 45-min leak sat at 6 hops |
+| Hydrograph `t_sat` used | 1.00 | simulated |
+
+### `t_sat` vs true fill minutes
+
+Each fill length run once with no leak and once with 1.5 L/s at J07, 12 h.
+Source: `results/mixed_fill.json`. Figure: `fig_tsat_vs_fill.png`.
+
+| True fill (min) | `t_sat` no-leak / leak (h) | Clock (75 min) error |
+| ---: | --- | ---: |
+| 45 | 5.75 / 5.75 | +30 min |
+| 60 | 6.00 / 6.00 | +15 min |
+| 75 | 6.25 / 6.25 | 0 |
+| 90 | 6.50 / 6.50 | −15 min |
+| 120 | 7.00 / 7.00 | −45 min |
+| 150 | 7.50 / 7.50 | −75 min |
+
+Hydrograph `t_sat` error is 0 min at every length on this DMA. The 75-minute
+clock is only right when the tanks really fill in 75 minutes.
+
+### Event lifecycle and Sunday no-leak update
+
+Implemented and unit-tested, not scored on a library:
+
+- Events: open → assign crew → repair → verify leftover fell below 0.35 L/s
+  or by ≥50%. Repair before assign is refused. A simulated repair is labelled.
+- Sunday update: shift the after-fill inlet baseline only if leftover is
+  already clean. A leak-sized leftover is refused so the frozen sensitivity
+  matrix cannot absorb a burst.
 
 ### Water-balance leak attribution
 
@@ -159,14 +204,36 @@ Source: `results/continuous_eval.json`. Do **not** blend with the intermittent t
 
 ### BattLeDIM 2020 / LeakDB
 
-Official year-long L-Town SCADA scoring: **not run** (550 MB dataset).
+Official **2019** L-Town SCADA, Table 3 economic score (Vrachimis et al. 2022).
+Detector: daily minimum-night-flow residual + 6-hour inflow persist; location
+= incident pipe of the loudest pressure drop. **Not** the IWS leftover hook.
+Source: `results/battledim_2019.json`. Downloaded evaluation-year CSVs +
+nominal INP (~38 MB), not `L-TOWN_Real.inp`.
 
-A short synthetic-leak pass on the published `L-TOWN.inp` (782 junctions, 10
-name-strided sensors, 20 candidate nodes, 2 L/s emitters, 8 tests) **did not
-recover the true node** (0/8 exact hits). That is not a BattLeDIM score. It
-only shows that dropping the same cheap solver onto L-Town without its SCADA
-layout and without a hop-aware metric is not enough. Continuous-supply
-evidence we *will* stand behind is the 40-scenario always-on copy of our DMA.
+| Metric | M.A.J.I. (this run) | BattLeDIM winners | Perfect | Label |
+| --- | ---: | ---: | ---: | --- |
+| TPR | 0.30 (7/23) | 0.57–0.65 | 1.00 | official 2019 SCADA |
+| False positives | 52 | (lower) | 0 | official 2019 SCADA |
+| Economic score | €144,030 | €260,562–€264,873 | €523,124 | official Table 3 |
+
+We lost, as expected. Night-flow on a 782-node always-on network without a
+calibrated EPANET search floods the crew (123 alarms, 64 repeats ignored).
+This is a **negative control**. Do **not** blend with the IWS leftover-flow
+library. The continuous-supply result we will still stand behind on *our*
+topology is the 40-scenario always-on copy of this DMA above.
+
+A short synthetic-leak pass on `L-TOWN.inp` (10 name-strided sensors, 20
+candidate nodes, 2 L/s emitters, 8 tests) still **did not** recover the true
+node (0/8 exact hits). That remains a topology probe, not a BattLeDIM score.
+
+### CIS / billed file
+
+Partner surface, not a billing product. Leftover inlet flow is real loss; the
+billed file gives the commercial residual. Pressure cannot split theft from
+meter error or unmetered use. Unmetered accounts are tagged, not alarmed.
+Dashboard tab **CIS — billed file** ingests a CSV (`account_id`, `node`,
+`billed_m3`) or exports a *simulated* extract from the hidden water balance.
+No leak event is opened from the apparent residual.
 
 ---
 
@@ -188,11 +255,11 @@ Multi-topology generalisation is future work.
 
 `python -m pytest tests -v` runs EPANET, not just mocks.
 
-What passed: mass-balance residual; after-fill inlet ≈ 0 without a leak and ≈ orifice flow with one; off-window pressure clamped to 0; meter bias and unmetered tags do not change hydraulics; solvers never receive leak labels or the clean field; zero-leak scenarios are not called leaks; a 1.5 L/s leak at J07 is found within 3 hops from noisy sensors; a **1% of inflow** leak stays below 0.3 m sensor noise; the 300-scenario library has a real zero-leak class.
+What passed (67 tests): mass-balance residual; after-fill inlet ≈ 0 without a leak and ≈ orifice flow with one; off-window pressure clamped to 0; meter bias and unmetered tags do not change hydraulics; solvers never receive leak labels or the clean field; zero-leak scenarios are not called leaks; a 1.5 L/s leak at J07 is found within 3 hops from noisy sensors; a **1% of inflow** leak stays below 0.3 m sensor noise; leftover 1 L/s × 8 open hours = 28.8 m³/day (not 86.4); Sunday update refuses a leak-sized leftover and absorbs a clean meter offset; event repair before assign is refused; `t_sat` on a 120-minute fill tracks the demand pattern, not the 75-minute clock; CIS apparent residual does not open a leak; official BattLeDIM Table 3 scorer credits on-time exact-link detections and charges €500 per false positive.
 
 What the suite caught: customer volume is **not** independent of a leak. PDD lowers delivered household volume by ~3% for a 1.5 L/s leak. The report must not say the two are decoupled.
 
-What the suite cannot do: field validation, official BattLeDIM scoring, hardware bench tests.
+What the suite cannot do: field validation, hardware bench tests. Official BattLeDIM 2019 scoring is a separate runner (`python -m benchmarks.battledim`), not a pytest.
 
 ## How to reproduce
 
@@ -201,6 +268,9 @@ python -m sim.smoke_network
 python -m sim.generate -n 300 --duration-h 48
 python -m placement.greedy
 python -m baseline.evaluate --data data/scenarios --duration-h 48
+python -m results.mixed_fill
+python -m results.duty_eval
+python -m benchmarks.battledim
 python -m results.plot_metrics
 streamlit run dashboard/app.py
 ```

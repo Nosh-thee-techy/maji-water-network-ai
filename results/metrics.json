@@ -6,7 +6,7 @@
   "labels": {
     "intermittent_library": "simulated",
     "continuous_same_topology": "simulated, continuous-supply variant — not BattLeDIM",
-    "battle_dim": "not_run",
+    "battle_dim": "official_2019_scada_negative_control",
     "hardware_bom": "estimated"
   },
   "library": {
@@ -14,7 +14,28 @@
     "duration_h": 48,
     "n_zero_leak": 57,
     "leak_q_ref_lps_range": [0.8, 3.0],
-    "note": "Leak sizes are 0.8-3.0 L/s at 20 m, not 1% of DMA inflow."
+    "observation_model": "iid_3pct_dropout",
+    "note": "Leak sizes are 0.8-3.0 L/s at 20 m, not 1% of DMA inflow. TPR/hops here are i.i.d. 3% dropouts, not the duty cycle."
+  },
+  "duty_cycle_mixed_fill_budget_10": {
+    "n": 24,
+    "duration_h": 12,
+    "mixed_fill_minutes": [45, 60, 75, 90, 120, 150],
+    "n_zero": 6,
+    "n_leak": 18,
+    "false_positive_rate": 0.0,
+    "true_positive_rate": 1.0,
+    "mean_hops_detected": 0.8055555555555556,
+    "frac_within_3_hops_detected": 0.9444444444444444,
+    "frac_used_change_point": 1.0,
+    "label": "simulated, duty-cycle observations, mixed fill 45–150 min",
+    "note": "Live 24 × 12 h. Do not blend with the 300 × 48 h i.i.d. table. One 45-min zero-leak window was sensor_failure (not a leak); one 45-min leak localised at 6 hops."
+  },
+  "mixed_fill_tsat": {
+    "fills_min": [45, 60, 75, 90, 120, 150],
+    "tsat_error_min": 0.0,
+    "clock_error_min": [30, 15, 0, -15, -45, -75],
+    "label": "simulated"
   },
   "localisation_vs_sensors_baseline": {
     "5": {"mean_hops": 1.705761316872428, "frac_within_3": 0.8683127572016461, "fpr": 0.0, "tpr": 1.0},
@@ -52,8 +73,27 @@
     "note": "GNN reconstructs pressure; leak detection TPR is 0. Ship the baseline for dig-here."
   },
   "battle_dim_official": {
-    "status": "not_run",
-    "reason": "Official year-long SCADA scoring not completed in the time budget."
+    "status": "ran",
+    "year": 2019,
+    "n_leaks": 23,
+    "n_detections": 123,
+    "true_positives": 7,
+    "false_positives": 52,
+    "repeats_ignored": 64,
+    "true_positive_rate": 0.30434782608695654,
+    "economic_eur": 144029.85083333333,
+    "perfect_eur": 523124.0,
+    "winner_tpr_range": [0.5652, 0.6522],
+    "winner_economic_eur_range": [260562, 264873],
+    "xmax_m": 300.0,
+    "cw_eur_per_m3": 0.8,
+    "cr_eur": 500.0,
+    "label": "official BattLeDIM 2019 economic score — continuous L-Town, not intermittent-supply evidence",
+    "note": "Negative control. Do not blend with the IWS leftover-flow library."
+  },
+  "cis_ingest": {
+    "alarms_from_apparent": false,
+    "note": "Billed file + leftover split real vs commercial residual. Pressure cannot split theft from meter error."
   },
   "leak_size_sweep_budget_10": {
     "label": "simulated",

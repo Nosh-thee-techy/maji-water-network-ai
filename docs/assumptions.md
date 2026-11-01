@@ -20,7 +20,7 @@ Updated as the build proceeds. Dates are 2026.
 ## Demand (storage-limited)
 
 - Household tanks are **not** tank elements. Demand is a pattern that is active only for the first N minutes of each supply window, then zero. This is the storage-limited simplification named in the white paper and must stay visible in code comments and the report.
-- **The solver no longer assumes 75 minutes.** Detection finds tank saturation from the inlet hydrograph (two-means knee) and requires leftover flow to persist. 75 minutes remains the *simulation* demand pattern and a clock fallback only when the DMA looks continuously supplied. A missing after-fill record is a `sensor_failure`; a scheduled window with no fill surge is `valve_did_not_open`. Neither is reported as a clean DMA.
+- **The solver no longer assumes 75 minutes.** Detection finds tank saturation from the inlet hydrograph (two-means knee) and requires leftover flow to persist. The generator now draws fill length from {45, 60, 75, 90, 120, 150} min so `t_sat` is tested off the clock. 75 minutes remains a clock fallback only when the DMA looks continuously supplied. A missing after-fill record is a `sensor_failure`; a scheduled window with no fill surge is `valve_did_not_open`. Neither is reported as a clean DMA.
 - Pressure-driven demand (EPANET 2.2 PDD), required pressure 20 m, minimum 0 m.
 - **A leak slightly reduces delivered customer volume** under PDD (less residual head in the fill window). A 1.5 L/s leak at J07 cut 12 h customer volume by about 3%. Tests require that customer volume does not *rise* with a leak, and that the PDD drop stays under 5%. We do not claim leak and demand are independent.
 
@@ -34,6 +34,7 @@ Updated as the build proceeds. Dates are 2026.
 - Real vs apparent loss needs inlet flow + billing, not pressure alone.
 - Unmetered demand is a tagged share of customer demand at selected nodes.
 - Meter bias is a hidden under-registration applied only when computing billed volume. Solvers never see the bias parameter.
+- A CIS export (`account_id`, `node`, `billed_m3`, `account_class`) is the partner surface for apparent loss. The residual after leftover and billed is **not** a leak alarm. Unmetered accounts are tagged, not punished. We do not split theft from meter error from that residual.
 
 ## Sensors
 
@@ -41,10 +42,18 @@ Updated as the build proceeds. Dates are 2026.
 - **IWS duty cycle** (not i.i.d. holes): off-window 15-minute heartbeat; every 5 min through fill and a 30-minute after-`t_sat` hold; 15 min for the rest of the open window; always uplink on valve-open or ΔP ≳ 0.5 m. Radio dropouts (3%, 1% cap on the leftover hold) apply only to uplinked steps. A continuously supplied DMA does not sleep.
 - Placement is greedy signature-separability on the hydraulic model, not a field survey.
 
+## No-leak recalibration
+
+- A Sunday / after-fill update may shift the **inlet leftover baseline** (and optionally fill-window pressure) only when leftover is below the 0.35 L/s detect threshold. The sensitivity matrix stays frozen. A leak-sized leftover is refused so the model cannot absorb a burst into “normal.”
+
+## Event lifecycle
+
+- An event is open → assign crew → repair → verify leftover fell (below 0.35 L/s or by ≥50%). The dashboard can *simulate* a successful repair; that is labelled, not a field close-out. We ingest a billed file; we do not implement TaKaDu’s work-order lock-in.
+
 ## Confidence
 
 - Ensemble spread is **simulation uncertainty**. We do not claim conformal coverage or calibrated confidence: there is no real-network calibration set.
 
 ## Benchmarks
 
-- BattLeDIM 2020 (L-Town) and LeakDB are **continuously supplied**. They support “the same engine still works when the network stays full.” They are not intermittent-supply evidence. Results are never blended with our synthetic intermittent numbers.
+- BattLeDIM 2020 (L-Town) and LeakDB are **continuously supplied**. Official 2019 SCADA was scored with Table 3 prices (xmax 300 m, €0.80/m³, €500/crew). That score is a negative control, not intermittent-supply evidence. Results are never blended with our synthetic intermittent numbers.

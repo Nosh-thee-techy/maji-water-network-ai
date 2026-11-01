@@ -46,11 +46,13 @@ We are better only if we do the thing they skip:
    Always-on 1 Hz is a battery and a LoRaWAN suicide.
 6. **PBC output, not a confidence score.** m³/day reduced, before/after
    hydrograph, hops to dig. That is how WASREB pays.
-7. **Do not play BattLeDIM.** Decline TaKaDu/Syrinix on continuous DMAs
-   except as a negative control.
+7. **BattLeDIM is a negative control.** Official 2019 SCADA was scored
+   (TPR 0.30, €144k vs winners ~€261–265k). Decline TaKaDu/Syrinix on
+   continuous DMAs as a *product* comparison.
 
-Year-1 we are worse at: event desks, CIS/billing, acoustic pinpoint,
-PRV control, daily twin calibration. Pair those. Do not rebuild them.
+Year-1 we are worse at: event desks, acoustic pinpoint, PRV control,
+daily twin calibration. CIS is a billed-file ingest, not a billing
+product. Pair those. Do not rebuild them.
 
 ## The IoT stack (what the hook actually needs)
 

@@ -18,7 +18,8 @@ Fallback tag: `v1-baseline` (scenario library + placement + emitter-calibration 
 | Emitter-calibration baseline + localisation-vs-sensor curve | **Simulated**, 300 × 48 h scenarios |
 | Physics-informed GNN ensemble | Trained. Reconstructs pressure (1.15 m MAE) but **does not beat the baseline on leaks** |
 | Always-on copy of this DMA | **Simulated continuous variant** — not BattLeDIM |
-| Official BattLeDIM 2020 / LeakDB scoring | **Not run** (time). Optional synthetic-leak pass on `L-TOWN.inp` is labelled separately |
+| Official BattLeDIM 2019 SCADA | **Ran** as a labelled continuous negative control (TPR 0.30, €144k vs winners ~€261–265k). Do not blend with IWS numbers |
+| CIS / billed file | Partner ingest. Apparent residual is not a leak alarm |
 | Hardware logger | Paper costing only — no firmware |
 
 **Current TRL 3–4.** Target TRL 5–6 after a 90-day single-DMA pilot. One topology only; multi-network generalisation is future work. Ensemble spread is simulation uncertainty, not conformal coverage.
@@ -31,7 +32,19 @@ Leak orifices in the library are **0.8–3.0 L/s at 20 m**, not 1% of DMA inflow
 python -m pip install -r requirements.txt
 python -m sim.smoke_network
 python -m pytest tests -v
+python -m sim.demo_library
 ```
+
+Operator UI (React + FastAPI) — this is the frontend to show:
+
+```bash
+pip install fastapi uvicorn
+cd web && npm install && npm run dev
+# other terminal:
+uvicorn api.main:app --port 8000
+```
+
+Open http://localhost:5173. The API is http://127.0.0.1:8000. Streamlit (`streamlit run dashboard/app.py`) remains as a lab console.
 
 Regenerate and evaluate (several minutes):
 
@@ -46,9 +59,11 @@ streamlit run dashboard/app.py
 Optional:
 
 ```bash
+python -m model.recon          # pressure twin only — leak TPR was 0; never used to call a leak
 python -m model.train --data data/scenarios --epochs 12 --ensemble 5
 python -m model.evaluate
 python -m benchmarks.continuous_dma --n 40
+python -m benchmarks.battledim
 ```
 
 ## Repository layout
@@ -59,7 +74,7 @@ placement/    greedy sensor placement
 baseline/     emitter-calibration solver (the fallback)
 model/        physics-informed GNN (offline; no EPANET in the loop)
 benchmarks/   continuous-DMA and L-Town runners
-dashboard/    Streamlit: Crew / Manager / Health
+dashboard/    Streamlit: Crew / Manager / Health / Events / CIS
 results/      metrics.json, RESULTS.md, captioned figures
 docs/         hardware BOM, assumptions log
 ```

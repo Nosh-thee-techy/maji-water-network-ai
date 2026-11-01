@@ -1,0 +1,74 @@
+{
+  "duration_h": 12.0,
+  "fills": [
+    45,
+    60,
+    75,
+    90,
+    120,
+    150
+  ],
+  "rows": [
+    {
+      "fill_minutes": 45,
+      "true_sat_h": 5.75,
+      "t_sat_noleak_h": 5.75,
+      "t_sat_leak_h": 5.75,
+      "clock_75_h": 6.25,
+      "err_noleak_min": 0.0,
+      "err_leak_min": 0.0,
+      "clock_err_min": 30
+    },
+    {
+      "fill_minutes": 60,
+      "true_sat_h": 6.0,
+      "t_sat_noleak_h": 6.0,
+      "t_sat_leak_h": 6.0,
+      "clock_75_h": 6.25,
+      "err_noleak_min": 0.0,
+      "err_leak_min": 0.0,
+      "clock_err_min": 15
+    },
+    {
+      "fill_minutes": 75,
+      "true_sat_h": 6.25,
+      "t_sat_noleak_h": 6.25,
+      "t_sat_leak_h": 6.25,
+      "clock_75_h": 6.25,
+      "err_noleak_min": 0.0,
+      "err_leak_min": 0.0,
+      "clock_err_min": 0
+    },
+    {
+      "fill_minutes": 90,
+      "true_sat_h": 6.5,
+      "t_sat_noleak_h": 6.5,
+      "t_sat_leak_h": 6.5,
+      "clock_75_h": 6.25,
+      "err_noleak_min": 0.0,
+      "err_leak_min": 0.0,
+      "clock_err_min": -15
+    },
+    {
+      "fill_minutes": 120,
+      "true_sat_h": 7.0,
+      "t_sat_noleak_h": 7.0,
+      "t_sat_leak_h": 7.0,
+      "clock_75_h": 6.25,
+      "err_noleak_min": 0.0,
+      "err_leak_min": 0.0,
+      "clock_err_min": -45
+    },
+    {
+      "fill_minutes": 150,
+      "true_sat_h": 7.5,
+      "t_sat_noleak_h": 7.5,
+      "t_sat_leak_h": 7.5,
+      "clock_75_h": 6.25,
+      "err_noleak_min": 0.0,
+      "err_leak_min": 0.0,
+      "clock_err_min": -75
+    }
+  ],
+  "label": "simulated"
+}

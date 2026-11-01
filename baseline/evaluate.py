@@ -114,7 +114,12 @@ def evaluate_library(
             )
         print(f"  evaluated {sid}")
 
-    summary = {"budgets": {}, "n_scenarios": len(ids)}
+    summary = {
+        "budgets": {},
+        "n_scenarios": len(ids),
+        "observation_model": "iws_duty_cycle",
+        "note": "Solvers see chamber-logger uplinks (off-window 15 min heartbeat, dense after t_sat), not i.i.d. 3% holes.",
+    }
     for b, rows in by_budget.items():
         zero = [r for r in rows if r["n_true"] == 0]
         leaked = [r for r in rows if r["n_true"] > 0]

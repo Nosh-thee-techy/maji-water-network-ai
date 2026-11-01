@@ -11,7 +11,7 @@ export default function Inlet() {
         <section className="hero">
           <div className="hero-head">
             <h2>Inlet hydrograph</h2>
-            <span className="hint">Teal = inlet. Grey = uplink. Click a time — the brief is not a leak call.</span>
+            <span className="hint">Teal band = valve open. Amber = after tanks full. Press a time to lock the brief.</span>
           </div>
           <Hydrograph
             data={win.hydrograph}

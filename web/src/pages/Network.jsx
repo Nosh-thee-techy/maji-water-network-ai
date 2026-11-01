@@ -11,22 +11,7 @@ export default function Network() {
         <section className="pane tall">
           <h2>DMA · click a junction</h2>
           <Map map={win.map} selected={node} onPick={setNode} />
-          <p className="inspect">
-            {node ? (
-              <>
-                <em>{node}</em>
-                {win.map.predicted.includes(node)
-                  ? " is on the dig list."
-                  : win.map.sensors.includes(node)
-                    ? " is a pressure sensor."
-                    : node === "R1"
-                      ? " is the reservoir."
-                      : " is a junction."}
-              </>
-            ) : (
-              "Cyan = sensor. Orange = suggested dig."
-            )}
-          </p>
+          <p className="inspect">Press a junction. Neighbours light up. Orange is the dig list, not a model call.</p>
         </section>
         <section className="crew">
           <h2>Dig list</h2>

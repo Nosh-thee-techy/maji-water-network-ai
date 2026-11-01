@@ -32,16 +32,8 @@ export default function Twin() {
                 </button>
               ))}
             </div>
-            <Map map={win.map} selected={node} onPick={setNode} pressure={reconSnap?.p_hat_m} />
-            <p className="inspect">
-              {node && reconSnap?.p_hat_m[node] != null ? (
-                <>
-                  <em>{node}</em> reconstructed {reconSnap.p_hat_m[node].toFixed(1)} m · true {reconSnap.p_true_m[node]?.toFixed(1)} m
-                </>
-              ) : (
-                win.recon.note
-              )}
-            </p>
+            <Map map={win.map} selected={node} onPick={setNode} pressure={reconSnap?.p_hat_m} truth={reconSnap?.p_true_m} />
+            <p className="inspect">{win.recon.note}</p>
           </>
         ) : (
           <p className="quiet">No checkpoint. Leftover does not wait on this net.</p>

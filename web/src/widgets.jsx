@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 export async function api(path, opts) {
   const r = await fetch(path, {
     headers: { "Content-Type": "application/json" },
@@ -16,14 +18,45 @@ export function shortCase(s) {
   return { title: s.label || id, detail: id, tone: "" };
 }
 
+function nearestSample(t, hour) {
+  let best = 0;
+  let dist = 1e9;
+  t.forEach((ti, i) => {
+    const d0 = Math.abs(ti - hour);
+    if (d0 < dist) {
+      dist = d0;
+      best = i;
+    }
+  });
+  return best;
+}
+
+function openBands(t0, t1) {
+  const out = [];
+  const startDay = Math.floor(t0 / 24);
+  const endDay = Math.floor(t1 / 24);
+  for (let d = startDay; d <= endDay; d++) {
+    for (const [a, b] of [
+      [5, 9],
+      [17, 21],
+    ]) {
+      const lo = Math.max(t0, d * 24 + a);
+      const hi = Math.min(t1, d * 24 + b);
+      if (hi > lo) out.push([lo, hi]);
+    }
+  }
+  return out;
+}
+
 export function Hydrograph({ data, cursor, onPick }) {
+  const [hover, setHover] = useState(null);
   if (!data?.t_h?.length) return null;
   const t = data.t_h;
   const q = data.q_clean_lps.map((v) => (v == null ? 0 : v));
   const up = (data.q_uplink_lps || q).map((v) => (v == null ? 0 : v));
   const w = 720;
-  const h = 320;
-  const pad = { l: 48, r: 16, t: 26, b: 34 };
+  const h = 340;
+  const pad = { l: 52, r: 18, t: 28, b: 36 };
   const t0 = Math.min(...t);
   const t1 = Math.max(...t);
   const q1 = Math.max(1, ...q, ...up) * 1.12;
@@ -34,110 +67,222 @@ export function Hydrograph({ data, cursor, onPick }) {
   const area = `${line} L${X(t[t.length - 1])},${Y(0)} L${X(t[0])},${Y(0)} Z`;
   const sat = (data.t_sat_h || []).filter((x) => x >= t0 && x <= t1);
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((f) => f * q1);
-  const pick = (evt) => {
+  const atEvent = (evt) => {
     const box = evt.currentTarget.getBoundingClientRect();
     const x = ((evt.clientX - box.left) / box.width) * w;
     const frac = Math.min(1, Math.max(0, (x - pad.l) / (w - pad.l - pad.r)));
     const hour = t0 + frac * (t1 - t0);
-    let best = 0;
-    let dist = 1e9;
-    t.forEach((ti, i) => {
-      const d0 = Math.abs(ti - hour);
-      if (d0 < dist) {
-        dist = d0;
-        best = i;
-      }
-    });
-    onPick({ hour: t[best], q: q[best] });
+    const i = nearestSample(t, hour);
+    return { hour: t[i], q: q[i], up: up[i] };
   };
+  const mark = hover || cursor;
   return (
-    <svg className="chart" viewBox={`0 0 ${w} ${h}`} onClick={pick}>
-      {ticks.map((v) => (
-        <g key={v}>
-          <line x1={pad.l} x2={w - pad.r} y1={Y(v)} y2={Y(v)} stroke="#1c3034" />
-          <text x={8} y={Y(v) + 4} fontSize="10" fill="#7f9692" fontFamily="IBM Plex Mono, monospace">
-            {v.toFixed(1)}
-          </text>
-        </g>
-      ))}
-      <path d={area} fill="rgba(58, 212, 199, 0.16)" />
-      <path d={uplink} fill="none" stroke="#6d8681" strokeWidth="1.4" />
-      <path d={line} fill="none" stroke="#3ad4c7" strokeWidth="2.6" strokeLinejoin="round" />
-      {sat.map((s) => (
-        <g key={s}>
-          <line x1={X(s)} x2={X(s)} y1={pad.t} y2={h - pad.b} stroke="#e67a2e" strokeDasharray="5 4" />
-          <text x={X(s) + 6} y={pad.t + 12} fontSize="11" fill="#e67a2e">
-            tanks full
-          </text>
-        </g>
-      ))}
-      {cursor && (
-        <g>
-          <line x1={X(cursor.hour)} x2={X(cursor.hour)} y1={pad.t} y2={h - pad.b} stroke="#e7f1ee" />
-          <circle cx={X(cursor.hour)} cy={Y(cursor.q)} r="4.5" fill="#e67a2e" />
-          <text x={X(cursor.hour) + 6} y={Y(cursor.q) - 8} fontSize="11" fill="#e7f1ee" fontFamily="IBM Plex Mono, monospace">
-            {cursor.q.toFixed(2)} L/s
-          </text>
-        </g>
+    <div className="graph-frame chart-frame">
+      <svg
+        className="chart"
+        viewBox={`0 0 ${w} ${h}`}
+        onPointerMove={(e) => setHover(atEvent(e))}
+        onPointerLeave={() => setHover(null)}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          const c = atEvent(e);
+          setHover(c);
+          onPick(c);
+        }}
+      >
+        {ticks.map((v) => (
+          <g key={v}>
+            <line x1={pad.l} x2={w - pad.r} y1={Y(v)} y2={Y(v)} stroke="#24383c" />
+            <text x={8} y={Y(v) + 4} fontSize="11" fill="#a6bbb6" fontFamily="IBM Plex Mono, monospace">
+              {v.toFixed(1)}
+            </text>
+          </g>
+        ))}
+        {openBands(t0, t1).map(([a, b]) => (
+          <rect key={`${a}-${b}`} x={X(a)} y={pad.t} width={X(b) - X(a)} height={h - pad.t - pad.b} fill="rgba(58, 212, 199, 0.07)" />
+        ))}
+        {sat.map((s) => (
+          <rect key={`leftover-${s}`} x={X(s)} y={pad.t} width={Math.max(0, X(Math.min(t1, Math.floor(s / 24) * 24 + (s % 24 < 12 ? 9 : 21))) - X(s))} height={h - pad.t - pad.b} fill="rgba(240, 138, 58, 0.1)" />
+        ))}
+        <path d={area} fill="rgba(58, 212, 199, 0.18)" />
+        <path d={uplink} fill="none" stroke="#8aa19c" strokeWidth="1.6" />
+        <path d={line} fill="none" stroke="#3ad4c7" strokeWidth="3" strokeLinejoin="round" />
+        {sat.map((s) => (
+          <g key={s}>
+            <line x1={X(s)} x2={X(s)} y1={pad.t} y2={h - pad.b} stroke="#f08a3a" strokeDasharray="5 4" strokeWidth="1.6" />
+            <text x={X(s) + 6} y={pad.t + 14} fontSize="12" fill="#f08a3a">
+              tanks full
+            </text>
+          </g>
+        ))}
+        {mark && (
+          <g>
+            <line x1={X(mark.hour)} x2={X(mark.hour)} y1={pad.t} y2={h - pad.b} stroke={hover && !cursor ? "#a6bbb6" : "#f3f8f6"} strokeWidth="1.4" />
+            <circle cx={X(mark.hour)} cy={Y(mark.q)} r="6" fill="#f08a3a" stroke="#f3f8f6" strokeWidth="1.4" />
+          </g>
+        )}
+        <text x={8} y={14} fontSize="11" fill="#a6bbb6">
+          L/s
+        </text>
+        <text x={pad.l} y={h - 8} fontSize="11" fill="#a6bbb6" fontFamily="IBM Plex Mono, monospace">
+          {t0.toFixed(0)} h
+        </text>
+        <text x={w - 52} y={h - 8} fontSize="11" fill="#a6bbb6" fontFamily="IBM Plex Mono, monospace">
+          {t1.toFixed(0)} h
+        </text>
+      </svg>
+      {mark && (
+        <div className="graph-card">
+          <b>
+            {mark.hour.toFixed(2)} h · {mark.q.toFixed(2)} L/s
+          </b>
+          <span>{hover ? "Press to lock this hour. The brief is not a leak call." : "Hour locked. The brief below is fill vs leftover vs closed."}</span>
+        </div>
       )}
-      <text x={pad.l} y={h - 8} fontSize="11" fill="#7f9692" fontFamily="IBM Plex Mono, monospace">
-        {t0.toFixed(0)} h
-      </text>
-      <text x={w - 48} y={h - 8} fontSize="11" fill="#7f9692" fontFamily="IBM Plex Mono, monospace">
-        {t1.toFixed(0)} h
-      </text>
-    </svg>
+    </div>
   );
 }
 
 function heat(t) {
-  const a = [46, 200, 188];
-  const b = [230, 122, 46];
-  const c = a.map((u, i) => Math.round(u + (b[i] - u) * t));
+  const stops = [
+    [26, 107, 114],
+    [212, 195, 90],
+    [230, 122, 46],
+  ];
+  const x = Math.min(1, Math.max(0, t)) * 2;
+  const i = x < 1 ? 0 : 1;
+  const f = x < 1 ? x : x - 1;
+  const c = stops[i].map((u, k) => Math.round(u + (stops[i + 1][k] - u) * f));
   return `rgb(${c[0]},${c[1]},${c[2]})`;
 }
 
-export function Map({ map, selected, onPick, pressure }) {
+function nodeRole(id, pred, sensors) {
+  if (id === "R1") return "Reservoir";
+  if (pred.has(id)) return "On the dig list";
+  if (sensors.has(id)) return "Pressure sensor";
+  return "Junction";
+}
+
+export function Map({ map, selected, onPick, pressure, truth }) {
+  const [hover, setHover] = useState(null);
   if (!map?.nodes?.length) return null;
   const xs = map.nodes.map((n) => n.x);
   const ys = map.nodes.map((n) => n.y);
-  const minX = Math.min(...xs) - 36;
-  const maxX = Math.max(...xs) + 36;
-  const minY = Math.min(...ys) - 36;
-  const maxY = Math.max(...ys) + 44;
+  const minX = Math.min(...xs) - 28;
+  const maxX = Math.max(...xs) + 56;
+  const minY = Math.min(...ys) - 32;
+  const maxY = Math.max(...ys) + 36;
   const byId = Object.fromEntries(map.nodes.map((n) => [n.id, n]));
   const pred = new Set(map.predicted || []);
   const sensors = new Set(map.sensors || []);
   const vals = pressure ? Object.values(pressure) : [];
   const lo = vals.length ? Math.min(...vals) : 0;
   const hi = vals.length ? Math.max(...vals) : 1;
+  const focus = hover || selected;
+  const nbrs = new Set();
+  if (focus) {
+    map.pipes.forEach((p) => {
+      if (p.a === focus) nbrs.add(p.b);
+      if (p.b === focus) nbrs.add(p.a);
+    });
+  }
+  const hat = focus && pressure ? pressure[focus] : null;
+  const tru = focus && truth ? truth[focus] : null;
   return (
-    <svg className="map" viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`}>
-      {map.pipes.map((p) => {
-        const a = byId[p.a];
-        const b = byId[p.b];
-        if (!a || !b) return null;
-        return <line key={p.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="#3d5a60" strokeWidth="4" />;
-      })}
-      {map.nodes.map((n) => {
-        let fill = pred.has(n.id) ? "#e67a2e" : sensors.has(n.id) ? "#2ec8bc" : n.id === "R1" ? "#e7f1ee" : "#1a2c2f";
-        if (pressure && pressure[n.id] != null && n.id !== "R1") {
-          fill = heat((pressure[n.id] - lo) / (hi - lo || 1));
-        }
-        const hit = selected === n.id;
-        return (
-          <g key={n.id} onClick={() => onPick(n.id)} style={{ cursor: "pointer" }}>
-            {pred.has(n.id) && !pressure && (
-              <circle cx={n.x} cy={n.y} r="16" fill="none" stroke="#f08a3a" strokeOpacity="0.55" />
-            )}
-            <circle cx={n.x} cy={n.y} r={hit ? 11 : pred.has(n.id) ? 9 : 7.5} fill={fill} stroke="#f3f8f6" strokeWidth={hit ? 2 : 1} />
-            <text x={n.x + 10} y={n.y - 9} fontSize="11" fill="#e7f1ee">
-              {n.id}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+    <div className="graph-frame">
+      <svg className="map" viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`} onPointerLeave={() => setHover(null)}>
+        {map.pipes.map((p) => {
+          const a = byId[p.a];
+          const b = byId[p.b];
+          if (!a || !b) return null;
+          const lit = focus && (p.a === focus || p.b === focus);
+          return (
+            <line
+              key={p.id}
+              x1={a.x}
+              y1={a.y}
+              x2={b.x}
+              y2={b.y}
+              stroke={lit ? "#3ad4c7" : "#3d5a60"}
+              strokeWidth={lit ? 7 : 5}
+              opacity={focus && !lit ? 0.35 : 1}
+            />
+          );
+        })}
+        {map.nodes.map((n) => {
+          let fill = pred.has(n.id) ? "#f08a3a" : sensors.has(n.id) ? "#3ad4c7" : n.id === "R1" ? "#f3f8f6" : "#24383c";
+          if (pressure && pressure[n.id] != null && n.id !== "R1") {
+            fill = heat((pressure[n.id] - lo) / (hi - lo || 1));
+          }
+          const on = selected === n.id;
+          const over = hover === n.id;
+          const dim = focus && n.id !== focus && !nbrs.has(n.id);
+          const r = on || over ? 13 : pred.has(n.id) ? 11 : 10;
+          const label = n.id;
+          const chipW = label.length * 7.2 + 10;
+          return (
+            <g
+              key={n.id}
+              onPointerEnter={() => setHover(n.id)}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onPick(n.id);
+              }}
+              style={{ cursor: "pointer" }}
+              opacity={dim ? 0.4 : 1}
+            >
+              <circle cx={n.x} cy={n.y} r="22" fill="transparent" />
+              {on && <circle cx={n.x} cy={n.y} r="18" fill="none" stroke="#f3f8f6" strokeWidth="1.6" />}
+              {pred.has(n.id) && !pressure && <circle cx={n.x} cy={n.y} r="16" fill="none" stroke="#f08a3a" strokeOpacity="0.7" />}
+              <circle cx={n.x} cy={n.y} r={r} fill={fill} stroke="#f3f8f6" strokeWidth={on || over ? 2.2 : 1.2} />
+              <rect x={n.x + 12} y={n.y - 20} width={chipW} height={16} rx="3" fill="#10191c" stroke="#2a4146" />
+              <text x={n.x + 16} y={n.y - 8} fontSize="12" fill="#f3f8f6">
+                {label}
+              </text>
+              {pressure && pressure[n.id] != null && (on || over) && (
+                <text x={n.x + 16} y={n.y + 22} fontSize="11" fill="#a6bbb6" fontFamily="IBM Plex Mono, monospace">
+                  {pressure[n.id].toFixed(1)} m
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      <div className="graph-legend">
+        {pressure ? (
+          <>
+            <i className="scale" />
+            <span>
+              {lo.toFixed(1)} m → {hi.toFixed(1)} m
+            </span>
+          </>
+        ) : (
+          <>
+            <i className="dot water" />
+            <span>Sensor</span>
+            <i className="dot alert" />
+            <span>Dig</span>
+            <i className="dot paper" />
+            <span>Reservoir</span>
+          </>
+        )}
+      </div>
+      {focus && (
+        <div className="graph-card">
+          <b>{focus}</b>
+          <span>{nodeRole(focus, pred, sensors)}</span>
+          {hat != null && (
+            <span>
+              Reconstructed {hat.toFixed(1)} m
+              {tru != null ? ` · true ${tru.toFixed(1)} m · err ${Math.abs(hat - tru).toFixed(1)} m` : ""}
+            </span>
+          )}
+          {nbrs.size > 0 && <span>Pipes to {[...nbrs].join(", ")}</span>}
+          <span>{hover && hover !== selected ? "Press to pin this junction." : "Pinned. Press another node to move."}</span>
+        </div>
+      )}
+    </div>
   );
 }
 

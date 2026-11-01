@@ -172,12 +172,69 @@ button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 svg.chart, svg.map {
   width: 100%;
-  height: auto;
+  height: 100%;
   display: block;
-  background: var(--panel-2);
+  background: transparent;
+  touch-action: none;
 }
 svg.chart { cursor: crosshair; }
-svg.map { cursor: default; min-height: 220px; }
+svg.map { cursor: default; }
+
+.graph-frame {
+  position: relative;
+  height: min(62vh, 560px);
+  background: var(--panel-2);
+  border-top: 1px solid var(--line);
+}
+.chart-frame { height: min(48vh, 380px); }
+.graph-card {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: 320px;
+  background: #182428;
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+}
+.graph-card b {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.graph-card span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+.graph-legend {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  background: #182428cc;
+  padding: 6px 8px;
+}
+.graph-legend .scale {
+  display: inline-block;
+  width: 88px;
+  height: 8px;
+  background: linear-gradient(90deg, #1a6b72, #d4c35a, #e67a2e);
+}
+.graph-legend .dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+.graph-legend .dot.water { background: var(--water); }
+.graph-legend .dot.alert { background: var(--alert); }
+.graph-legend .dot.paper { background: var(--text); }
 
 .brief {
   padding: 14px 16px 16px;
@@ -204,7 +261,8 @@ svg.map { cursor: default; min-height: 220px; }
   flex: 1;
 }
 .pane { padding: 12px 14px 14px; min-width: 0; }
-.pane.tall svg.map { min-height: 360px; max-height: 58vh; }
+.pane.tall { padding-bottom: 0; }
+.pane.tall .graph-frame { height: min(64vh, 580px); }
 .inspect {
   margin: 10px 0 0;
   color: var(--muted);

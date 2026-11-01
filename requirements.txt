@@ -6,6 +6,9 @@ pyarrow
 matplotlib
 plotly
 streamlit
+fastapi>=0.115
+starlette>=0.46,<2
+uvicorn
 torch
 pyyaml
 networkx

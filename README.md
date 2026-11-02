@@ -79,7 +79,7 @@ results/      metrics.json, RESULTS.md, captioned figures
 docs/         hardware BOM, assumptions log
 ```
 
-Numbers for the 15-page report live in [`results/RESULTS.md`](results/RESULTS.md).
+Final report (PDF): [`docs/MAJI_Final_Report.pdf`](docs/MAJI_Final_Report.pdf). Source and numbers: [`docs/MAJI_Final_Report.md`](docs/MAJI_Final_Report.md), [`results/RESULTS.md`](results/RESULTS.md).
 
 ## Team
 

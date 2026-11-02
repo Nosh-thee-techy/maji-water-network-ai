@@ -1,0 +1,292 @@
+<!doctype html><html><head><meta charset='utf-8'><title>M.A.J.I Final Report</title><style>
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+html, body { margin: 0; }
+body {
+  font-family: "Palatino Linotype", Palatino, "Times New Roman", serif;
+  font-size: 10.6pt;
+  line-height: 1.36;
+  color: #111;
+}
+h1 { font-size: 18pt; line-height: 1.2; margin: 0 0 8pt; }
+h2 { font-size: 13.5pt; margin: 16pt 0 6pt; page-break-after: avoid; }
+h3 { font-size: 12pt; margin: 12pt 0 4pt; page-break-after: avoid; }
+p, li { margin: 0 0 6pt; }
+ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+strong { font-weight: 700; }
+em { font-style: italic; }
+hr { border: 0; border-top: 1px solid #bbb; margin: 12pt 0; }
+code, pre { font-family: Consolas, "Courier New", monospace; font-size: 9pt; }
+pre {
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  padding: 8pt;
+  white-space: pre-wrap;
+  page-break-inside: avoid;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 9.5pt;
+  margin: 0 0 10pt;
+  page-break-inside: avoid;
+}
+th, td { border: 1px solid #ccc; padding: 3pt 5pt; text-align: left; vertical-align: top; }
+th { background: #f0f0f0; }
+img {
+  max-width: 100%;
+  max-height: 92mm;
+  display: block;
+  margin: 4pt auto 2pt;
+  page-break-inside: avoid;
+}
+.fig { font-size: 10pt; color: #333; margin: 0 0 10pt; }
+.cover p { margin: 2pt 0; }
+</style></head><body><div class="cover"><h1>M.A.J.I — leftover flow after tanks fill</h1>
+<p><strong>Final technical report</strong>  </p>
+<p>Khalifa University–UNESCO Global Water Hackathon 2026  </p>
+<p>Theme 3 · Smart, Digital, and AI-Enabled Water Systems  </p>
+<p>Team RKO · Registration CMAT-00064 · 1 November 2026</p>
+<p><strong>Team.</strong> Blessings Wanjiku (lead), Ravine Rianga, Faruoq Muhammed, Francis Musau, Vivian Njoroge, Peter Kariuki.  </p>
+<p><strong>Advisor.</strong> Prof. Easter Wega. <strong>Mentor.</strong> Prof. Sarah Mugo.</p>
+<p><strong>Access.</strong> https://github.com/Nosh-thee-techy/maji-water-network-ai  </p>
+<p><strong>TRL.</strong> 3–4 (reproducible simulation prototype). Target 5–6 after a 90-day single-DMA pilot.</p>
+<p>Every number in this report is labelled <strong>simulated</strong>, <strong>benchmark</strong>, or <strong>estimated</strong>. Nothing here is a field measurement. Where a number could not be produced honestly, it is omitted rather than invented.</p>
+<hr>
+<h2>Abstract</h2>
+<p>Most leak-detection methods assume a pressurised night. About one billion people live on intermittent water supply (IWS). Household tanks keep drawing until they fill, so classic minimum-night-flow (MNF) is false. Al-Washali, Sharma, and Kennedy (2019) showed the correct test on a 1,028-customer DMA in Zarqa, Jordan: wait until tanks saturate, then leftover inlet flow is leakage. They needed about 63 hours of continuous supply. That procedure is not a daily product on a rationed network.</p>
+<p>M.A.J.I applies the same leftover-flow test <strong>inside each rationing window</strong>. Customer demand is storage-limited. A leak is an orifice (emitter, Q proportional to sqrt(P)). After the inlet hydrograph drops (<code>t_sat</code>), leftover litres per second is the leak test. Sparse pressure then shrinks the dig list; it does not call the leak.</p>
+<p>A physics-informed graph net trained on this DMA reconstructed nodal pressure (1.15 m MAE on 45 held-out simulated scenarios) and <strong>detected no leaks</strong> (TPR 0.00). The detector we ship is leftover flow plus a frozen-sensitivity L1 fit. The net is a pressure twin only.</p>
+<p>On an 18-node schematic DMA the after-fill hook detects 0.40 L/s where pressure-only is still blind. The white paper’s 1% of DMA inflow target (0.056 L/s) is invisible under 0.3 m sensor noise; we do not claim it. Official BattLeDIM 2019 scoring of L-Town SCADA lost to the winners (TPR 0.30, €144,030 vs €260,562–€264,873). That run is a labelled continuous-supply negative control and is never blended with IWS numbers.</p>
+<p>Software: EPANET 2.2 / WNTR scenario library, emitter-calibration baseline, IWS duty-cycle observation model, FastAPI leftover engine, four-page operator desk. Public repository as above.</p>
+<hr>
+<h2>1. Problem statement</h2>
+<h3>1.1 Why night-flow fails on IWS</h3>
+<p>On a continuously supplied district metered area (DMA), leakage is estimated from minimum night flow, typically 02:00–04:00. Customers are asleep, so inlet flow is approximately leakage plus a small legitimate night use (Farley &amp; Trow; Lambert; Liemberger). TaKaDu, UK nightline practice, and most “AI leak” products are this identity with better statistics and event desks.</p>
+<p>On intermittent supply that identity is false. Household ground and roof tanks keep drawing until they are full, even at 03:00. Al-Washali et al. (2019) held a Zarqa DMA in continuous supply until the inflow hydrograph started to repeat (~63 hours). Only then was leftover inflow leakage. Repeating that conversion on a rationed network is operationally unrealistic: it spends water the utility does not have and requires a schedule the operations room cannot keep.</p>
+<p>Ashdown Park / VEI work on Harare IWS DMAs reached the same operational conclusion from the other direction: <strong>flow detects better than pressure</strong> on intermittent districts, and utility supply irregularity is harder than customer demand. Nairobi and Harare already prefer flow sensors for NRW. A 15-sensor pressure grid without a trusted inlet meter is the wrong first install.</p>
+<h3>1.2 Health is the same pressure story</h3>
+<p>Kumpel and Nelson (2014) found indicator bacteria common below ~10 psi (~7 m), even with chlorine present. When the inlet is closed the DMA is slack; intrusion is possible at any opening. That is not a separate water-quality product. It is a low-pressure / empty-pipe problem. On the schematic DMA used here, off-window slack is <strong>trivial</strong> (the network is drained by construction). In-window crossings of 7 m are rare (~0.023% of node-steps). We therefore do <strong>not</strong> headline intrusion as a result. We name the prior and report the numbers.</p>
+<h3>1.3 Context numbers (not produced by this repository)</h3>
+<table><tr><th>Claim</th><th>Number</th><th>Label</th></tr><tr><td>Global NRW volume / value</td><td>126 billion m³/y, ~US$39 billion</td><td>literature (Liemberger &amp; Wyatt 2019)</td></tr><tr><td>Kenya public-provider NRW</td><td>48% (2024/25)</td><td>WASREB, as cited in the white paper</td></tr><tr><td>People on intermittent supply</td><td>~1 billion</td><td>literature (Taylor et al. 2018)</td></tr><tr><td>Intrusion prior</td><td>~7 m (~10 psi)</td><td>literature (Kumpel &amp; Nelson 2014); starting prior, not a constant</td></tr></table>
+<p>M.A.J.I is not a general leak-detection application. It is MNF logic on a network that has no night.</p>
+<hr>
+<h2>2. Scientific hook</h2>
+<p>Customer demand is storage-limited: once a household tank fills, draw stops regardless of pressure. A leak is an emitter: it keeps drawing as long as there is pressure. After tanks saturate, leftover inlet flow is the leak.</p>
+<p>On the 18-node schematic DMA, 12 h excerpt (<code>fig_storage_vs_leak.png</code> in the caption log; the identity is also the demo-leak window):</p>
+<table><tr><th>Quantity</th><th>No leak</th><th>1.5 L/s leak at J07</th><th>Label</th></tr><tr><td>Inlet flow during tank-fill</td><td>5.55 L/s</td><td>higher by the orifice</td><td>simulated</td></tr><tr><td>Inlet flow after tank-fill, inlet still open</td><td>≈ 0 L/s</td><td>1.41 L/s</td><td>simulated</td></tr><tr><td>Off-window pressure (clamped)</td><td>0 m</td><td>0 m</td><td>simulated (post-process)</td></tr></table>
+<p>Household tanks are <strong>not</strong> EPANET tank elements. Demand is a pattern that is active only for the first N minutes of each 05:00–09:00 and 17:00–21:00 window, then zero. This is the storage-limited simplification named in the white paper. Leaks are junction emitters with EPANET default exponent 0.5: Q = C × P^0.5, C set so the orifice delivers a stated L/s at a 20 m reference head.</p>
+<p>The deployable change-point is on the <strong>inlet hydrograph</strong>, not a 75-minute clock. Sequence: high plateau (tanks drawing) → drop → lower plateau (leftover). We call the knee <code>t_sat</code>. A clock is a laboratory convenience. In code it is <code>CLOCK_FILL_MINUTES</code> and is used only as a fallback when the DMA looks continuously supplied (no knee).</p>
+<p>Leftover is reported in L/s and as a performance-based contract (PBC) unit: leftover m³/day on <strong>open hours</strong>, not on 24 h. 1 L/s × 8 open hours = 28.8 m³/day, not 86.4. The test suite asserts that identity.</p>
+<p>Three jobs, not interchangeable:</p>
+<ol>
+<li><strong>Detection</strong> — leftover litres per second after <code>t_sat</code>, with persistence.</li>
+<li><strong>Localisation</strong> — sparse L1 fit of a frozen no-leak sensitivity matrix. Output is hops, not “X% accuracy.”</li>
+<li><strong>Reconstruction</strong> — graph net fills nodal head from sparse sensors. Not used to call a leak.</li>
+</ol>
+<hr>
+<h2>3. Method</h2>
+<h3>3.1 Network and hydraulics</h3>
+<p>One schematic DMA: 18 junctions (J00–J17), 25 pipes, one reservoir (R1). Looped core plus two dead-end laterals. J00 is the DMA inlet (zero customer demand). Not a traced utility GIS extract. Multi-topology generalisation is future work.</p>
+<table><tr><th>Parameter</th><th>Value</th><th>Reason</th></tr><tr><td>Hazen–Williams C</td><td>120 on every pipe</td><td>Aged metallic / mixed; no per-pipe calibration</td></tr><tr><td>Pipe diameters</td><td>40–110 mm</td><td>First-pass 80–200 mm had ~0.06 m peak headloss; leak signatures sat below 0.3 m sensor noise</td></tr><tr><td>Reservoir head</td><td>38 m</td><td>With elevations 13.5–20 m, open-window nodal head ~12–22 m</td></tr><tr><td>Hydraulic step</td><td>5 minutes</td><td>Matches the twin series</td></tr><tr><td>Scenario duration (library)</td><td>48 h</td><td>Two full days, four rationing windows</td></tr><tr><td>Demand</td><td>EPANET 2.2 PDD, P_req = 20 m, P_min = 0 m</td><td>Storage-limited pattern, not tank objects</td></tr></table>
+<p>Rationing is a binary inlet-pipe status: open 05:00–09:00 and 17:00–21:00; closed otherwise. No gradual valve, no pump curve, no source-head variation. EPANET / WNTR do not empty pipes of water. When the inlet is closed, PDD drives heads toward zero; we then <strong>clamp off-window pressure to 0 m</strong>. That is a post-process, not a two-phase air–water model. A fill / intrusion transient model is out of scope.</p>
+<p>A leak slightly reduces delivered customer volume under PDD (less residual head in the fill window). A 1.5 L/s leak at J07 cut 12 h customer volume by about 3%. Tests require that customer volume does not <em>rise</em> with a leak, and that the PDD drop stays under 5%. We do not claim leak and demand are independent.</p>
+<p>Unmetered demand is a tagged share of customer demand at selected nodes. Meter bias is a hidden under-registration applied only when computing billed volume. Solvers never see the bias parameter.</p>
+<h3>3.2 Scenario library</h3>
+<p><code>python -m sim.generate</code> writes 300 scenarios × 48 h (default). 57 are zero-leak (19%). Library leak orifices are <strong>0.8–3.0 L/s at 20 m</strong> (about 14–55% of peak DMA inflow ≈ 5.6 L/s). That is larger than the white paper’s 1% target. The size sweep (Section 4.2) is a separate experiment.</p>
+<p>Fill length is no longer fixed at 75 minutes. The generator draws from {45, 60, 75, 90, 120, 150} min so <code>t_sat</code> is tested off the clock. 75 minutes remains the demand default and the continuous-supply clock fallback.</p>
+<p>A four-window demo pack (<code>results/demo</code>, 12 h) is generated by <code>sim/demo_library.py</code> so the operator desk runs without the 300-scenario library: clean, leak at J07 (1.5 L/s), long fill (120 min + same leak), valve did not open.</p>
+<h3>3.3 Observation model (<code>sim/observe.py</code>)</h3>
+<p>Solvers see only what a chamber logger would uplink: noisy pressure at placed sensors, noisy inlet flow, and valve position (1 / 0 / NaN). They never see leak labels or the clean field.</p>
+<table><tr><th>Noise</th><th>Value</th></tr><tr><td>Pressure</td><td>σ_P = 0.30 m</td></tr><tr><td>Inlet flow</td><td>σ_Q = 0.15 L/s</td></tr></table>
+<p><strong>IWS duty cycle</strong> (not i.i.d. holes). Off-the-shelf DMA loggers default to “15 minutes forever.” That wastes battery off-window and is too coarse at the saturation knee.</p>
+<table><tr><th>Phase</th><th>How we know</th><th>Sample</th><th>Uplink</th></tr><tr><td>Off-window</td><td>Valve closed, P ≈ 0, Q ≈ 0</td><td>15 min heartbeat</td><td>Daily or on exception</td></tr><tr><td>Open transient</td><td>Valve opens or ΔP ≳ 0.5 m</td><td>1 Hz × 30–60 s</td><td>Immediate</td></tr><tr><td>Fill</td><td>Valve open, Q high plateau</td><td>1 min flow + pressure</td><td>15 min batch</td></tr><tr><td>Saturation</td><td>Change-point: Q drops and stays</td><td>—</td><td>Flag <code>t_sat</code></td></tr><tr><td>After-fill plateau</td><td>Valve still open, post <code>t_sat</code></td><td>1 min for ≥30 min</td><td>Immediate if residual &gt; threshold</td></tr><tr><td>Rest of window</td><td>After the 30 min hold</td><td>5 min</td><td>15 min batch</td></tr></table>
+<p>Radio dropouts (3%, 1% cap on the leftover hold) apply only to uplinked steps. A continuously supplied DMA does not sleep. A missing after-fill record is a <code>sensor_failure</code> event, not a clean DMA.</p>
+<p>The 300 × 48 h localisation table in Section 4.1 was scored under an earlier <strong>i.i.d. 3% dropout</strong> model. The duty-cycle model is scored on a live 24 × 12 h mixed-fill set (Section 4.4). <strong>Do not blend the two.</strong></p>
+<p>Placement is greedy signature-separability on the hydraulic model (<code>placement/greedy.py</code>), not a field survey. Budgets 5, 10, 15, 18 (all junctions).</p>
+<h3>3.4 Saturation and event types (<code>baseline/saturation.py</code>)</h3>
+<p>The 75-minute fill is a simulation convenience. In the field the utility does not know that number. Constants actually used:</p>
+<table><tr><th>Constant</th><th>Value</th><th>Role</th></tr><tr><td>OPEN_CHECK_MINUTES</td><td>20</td><td>First 20 min must show a fill surge, or the valve never opened</td></tr><tr><td>MIN_FILL_MINUTES</td><td>20</td><td>Do not declare saturation in the valve transient</td></tr><tr><td>MIN_AFTER_MINUTES</td><td>30</td><td>Need ≥30 min of after-fill to trust leftover (duty-cycle hold)</td></tr><tr><td>MIN_DROP_LPS</td><td>0.80</td><td>Drop from fill plateau to leftover (~5 × 0.15 L/s flow-noise σ)</td></tr><tr><td>VALVE_CLOSED_LPS</td><td>0.30</td><td>Scheduled-open but Q below this in the first 20 min → valve closed</td></tr><tr><td>VALVE_CLOSED_PRESSURE_M</td><td>1.0</td><td>Supporting pressure check</td></tr><tr><td>MIN_FINITE_FRAC</td><td>0.40</td><td>Fraction of finite samples required before we trust a window</td></tr><tr><td>PERSIST_STEPS</td><td>4</td><td>DBM-style: leftover must stay above threshold this many steps</td></tr><tr><td>DETECT threshold</td><td>0.35 L/s</td><td>Operating point for leak vs no_leak</td></tr></table>
+<p><code>t_sat</code> is a two-means knee on the inlet. If no knee, the clock fallback is used and leftover is treated with more caution (<code>used_change_point = false</code>).</p>
+<p>One event type per supply window:</p>
+<table><tr><th>Type</th><th>Meaning</th></tr><tr><td><code>leak</code></td><td>Leftover persisted above 0.35 L/s</td></tr><tr><td><code>no_leak</code></td><td>Leftover persisted below 0.35 L/s</td></tr><tr><td><code>valve_did_not_open</code></td><td>Scheduled window, no fill surge</td></tr><tr><td><code>sensor_failure</code></td><td>After-fill (or the whole window) is missing</td></tr><tr><td><code>still_filling</code></td><td>Window stayed on the high plateau (no knee)</td></tr></table>
+<h3>3.5 Localisation (emitter-calibration baseline)</h3>
+<p>A no-leak hydraulic run plus a per-node sensitivity (signature) matrix is built once (<code>baseline/evaluate.py</code> → <code>build_noleak_and_sensitivity</code>). The matrix stays <strong>frozen</strong>. A Sunday / after-fill update (<code>baseline/recalibrate.py</code>) may shift the after-fill inlet baseline (and optionally fill-window pressure) only when leftover is already below 0.35 L/s. A leak-sized leftover is refused so the model cannot absorb a burst into “normal.”</p>
+<p>Given noisy sensor pressure and inlet flow, <code>baseline/emitter_calibrate.py</code> estimates a sparse non-negative leak vector by L1 fit to the signatures. Ranked nodes plus hop radius are the dig list. Hungarian matching on the pipe graph (<code>baseline/graph_distance.py</code>) scores hops against truth in evaluation only. Solvers never receive leak labels.</p>
+<h3>3.6 Graph net (offline; not the detector)</h3>
+<p><code>model/gnn.py</code> is a small message-passing net: sparse pressure in, full field + leak q out. Edge attributes include Hazen–Williams geometry. Training (<code>model/train.py</code>) uses reconstruction MSE, a leak-q term, and a physics residual. <strong>No EPANET in the training loop.</strong> Inputs are two aggregated windows per scenario (fill-window mean, after-fill mean), <code>in_dim = 8</code>. Full 5-minute sequences made training too slow for the time budget; those two windows are also what the baseline uses.</p>
+<p>Ensemble (library result): 5 seeds, 80% row subsets, budget 10, 45 held-out scenarios. Spread is <strong>simulation uncertainty</strong>, not conformal coverage. There is no real-network calibration set.</p>
+<p>A second, smaller trainer (<code>python -m model.recon</code>) writes <code>model/checkpoints/gnn_recon.pt</code> from 20 × 12 h scenarios × 25 epochs so the Twin page can load without the full ensemble. That checkpoint reconstructs demo windows. Leak TPR remains 0. The head is unused for the dig list (<code>leak_head_unused: true</code>).</p>
+<h3>3.7 Event lifecycle (<code>dashboard/lifecycle.py</code>)</h3>
+<p>State machine: <code>open</code> → <code>assigned</code> → <code>repaired</code> → <code>verified</code> (or <code>failed_verify</code>). Repair before assign is refused. Close only when leftover now is below 0.35 L/s or has dropped by ≥50%. A simulated repair is labelled. We do not implement a vendor work-order lock-in.</p>
+<h3>3.8 CIS ingest (<code>baseline/cis.py</code>)</h3>
+<p>CSV (<code>account_id</code>, <code>node</code>, <code>billed_m3</code>, optional <code>account_class</code>) plus leftover gives real vs commercial residual. <code>alarms_from_apparent = False</code>. Unmetered accounts are tagged, not punished. Apparent residual does not open a leak. Pressure cannot split theft from meter error.</p>
+<h3>3.9 Worked leftover unit</h3>
+<p>Demo leak window (J07, 1.5 L/s orifice). Solver leftover ≈ <strong>1.45 L/s</strong>. Two rationing windows × 4 hours = 8 open hours/day.</p>
+<p>1.45 L/s × 8 h × 3600 / 1000 = <strong>41.8 m³/day</strong>.</p>
+<p>That is the PBC line. 1 L/s × 8 h = 28.8 m³/day. The suite asserts the 28.8 identity so nobody reports 86.4 (a 24 h multiply on an 8 h valve).</p>
+<h3>3.10 Software map</h3>
+<table><tr><th>Path</th><th>Role</th></tr><tr><td><code>sim/</code></td><td>Network, schedule, storage-limited demand, emitters, balance, observe, generate, demo library</td></tr><tr><td><code>placement/</code></td><td>Greedy sensor placement</td></tr><tr><td><code>baseline/</code></td><td>Saturation, emitter calibrate, evaluate, recalibrate, explain, CIS</td></tr><tr><td><code>model/</code></td><td>GNN, train, evaluate, recon twin</td></tr><tr><td><code>benchmarks/</code></td><td>Continuous-DMA copy; official BattLeDIM 2019 scorer</td></tr><tr><td><code>api/main.py</code></td><td>HTTP leftover engine for the desk</td></tr><tr><td><code>web/</code></td><td>Four-page operator UI (Inlet, Network, Twin, Crew)</td></tr><tr><td><code>dashboard/</code></td><td>Streamlit lab console + lifecycle store</td></tr><tr><td><code>tests/</code></td><td>EPANET-backed pytest, not mocks</td></tr></table>
+<p>Hour briefs (<code>baseline/explain.py</code>) are rules: fill / leftover / quiet / off / valve. They translate leftover into crew English. They are not a classifier.</p>
+<hr>
+<h2>4. Validation results</h2>
+<p>Library leaks 0.8–3.0 L/s at 20 m. We did not have a pressure residual above 0.3 m sensor noise at 1% of inflow, and we do not claim that target.</p>
+<h3>4.1 Localisation vs sensor count (baseline)</h3>
+<p>300 scenarios × 48 h, 57 zero-leak. i.i.d. 3% dropouts. False-alarm rate held at the 0.35 L/s after-fill detector. <strong>Simulated. One topology.</strong> Source: <code>results/baseline_eval.json</code> / <code>results/metrics.json</code>.</p>
+<table><tr><th>Sensors</th><th>Mean hops (detected leaks)</th><th>% within 3 hops</th><th>FPR (n=57)</th><th>TPR (n=243)</th><th>Label</th></tr><tr><td>5</td><td>1.71</td><td>86.8%</td><td>0.00</td><td>1.00</td><td>simulated</td></tr><tr><td>10</td><td>0.77</td><td>95.9%</td><td>0.00</td><td>1.00</td><td>simulated</td></tr><tr><td>15</td><td>0.30</td><td>98.4%</td><td>0.00</td><td>1.00</td><td>simulated</td></tr><tr><td>18 (all junctions)</td><td>0.23</td><td>97.5%</td><td>0.00</td><td>1.00</td><td>simulated</td></tr></table>
+<p>This is a curve, not a single accuracy number. Detection is leftover; localisation is the L1 fit. Observation-model note: this table is i.i.d. dropouts. See Section 4.4 for duty-cycle.</p>
+<h3>4.2 Leak-size sweep (budget 10)</h3>
+<p>Four sites (J05, J07, J12, J17) × two noise seeds (n = 8 per size). Same 0.35 L/s detect threshold. <strong>Simulated.</strong> Source: <code>results/metrics.json</code> → <code>leak_size_sweep_budget_10</code>.</p>
+<table><tr><th>Orifice at 20 m</th><th>≈ % of peak inflow</th><th>Hook TPR</th><th>Hook hops (all)</th><th>Pressure-only TPR</th><th>Pressure-only hops (all)</th></tr><tr><td>0.056 L/s</td><td>1%</td><td>0.00</td><td>6 (miss)</td><td>0.00</td><td>6 (miss)</td></tr><tr><td>0.15 L/s</td><td>~3%</td><td>0.00</td><td>6</td><td>0.00</td><td>6</td></tr><tr><td>0.25 L/s</td><td>~4%</td><td>0.00</td><td>6</td><td>0.00</td><td>6</td></tr><tr><td>0.40 L/s</td><td>~7%</td><td><strong>1.00</strong></td><td><strong>4.25</strong></td><td><strong>0.00</strong></td><td>6</td></tr><tr><td>0.80 L/s</td><td>~14%</td><td>1.00</td><td>1.38</td><td>1.00</td><td>1.50</td></tr><tr><td>1.50 L/s</td><td>~27%</td><td>1.00</td><td>0.88</td><td>1.00</td><td>0.88</td></tr><tr><td>2.50 L/s</td><td>~45%</td><td>1.00</td><td>1.00</td><td>1.00</td><td>0.75</td></tr></table>
+<p>The 1% white-paper target fails for both signals. The hook’s distinct work is <strong>detection at 0.40 L/s</strong>, where pressure-only still reports no leak. Localisation at 0.40 L/s is still poor (4.25 hops). From 0.80 L/s up, both methods work.</p>
+<img src="file:///C:/Users/Administrator/mmaji/results/figures/fig_localisation_vs_leak_size.png" alt="Detection vs orifice size">
+<p class="fig"><strong>Figure 1.</strong> Detection rate and mean hop error vs orifice size, budget 10. Simulated, 4 sites × 2 noise seeds. The hook’s value is the 0.40 L/s column.</p>
+<h3>4.3 Hook vs pressure-only on the large-leak library</h3>
+<p>First 80 of 300 scenarios, budget 10. Library leaks are 0.8–3.0 L/s — the regime where pressure already works. <strong>Simulated.</strong></p>
+<table><tr><th>Method</th><th>n</th><th>Zero-leak FPR</th><th>TPR</th><th>Mean hops (detected)</th><th>Within 3 hops</th></tr><tr><td>After-fill inlet hook</td><td>80</td><td>0.00</td><td>1.00</td><td>1.17</td><td>89.4%</td></tr><tr><td>Pressure only (same 0.35 L/s threshold on the L1 fit)</td><td>80</td><td>0.00</td><td>1.00</td><td>0.83</td><td>93.9%</td></tr></table>
+<p>On large leaks, pressure-only localises slightly better. The hook is not a better localiser; it is an earlier detector.</p>
+<img src="file:///C:/Users/Administrator/mmaji/results/figures/fig_hook_vs_pressure_only.png" alt="Hook vs pressure-only">
+<p class="fig"><strong>Figure 2.</strong> Same 80 library scenarios. Pressure-only is slightly tighter. The hook’s value is not this panel.</p>
+<h3>4.4 Hydrograph <code>t_sat</code> vs true fill minutes</h3>
+<p>Each fill length run once with no leak and once with 1.5 L/s at J07, 12 h. Source: <code>results/mixed_fill.json</code>. <strong>Simulated.</strong></p>
+<table><tr><th>True fill (min)</th><th><code>t_sat</code> no-leak (h)</th><th><code>t_sat</code> leak (h)</th><th>Clock (75 min) error</th></tr><tr><td>45</td><td>5.75</td><td>5.75</td><td>+30 min</td></tr><tr><td>60</td><td>6.00</td><td>6.00</td><td>+15 min</td></tr><tr><td>75</td><td>6.25</td><td>6.25</td><td>0</td></tr><tr><td>90</td><td>6.50</td><td>6.50</td><td>−15 min</td></tr><tr><td>120</td><td>7.00</td><td>7.00</td><td>−45 min</td></tr><tr><td>150</td><td>7.50</td><td>7.50</td><td>−75 min</td></tr></table>
+<p>Hydrograph <code>t_sat</code> error is <strong>0 min</strong> at every length on this DMA. A leak at J07 did not move the knee. The 75-minute clock is only right when the tanks really fill in 75 minutes.</p>
+<img src="file:///C:/Users/Administrator/mmaji/results/figures/fig_tsat_vs_fill.png" alt="t_sat vs fill">
+<p class="fig"><strong>Figure 3.</strong> Hydrograph <code>t_sat</code> tracks the demand pattern. The clock is a horizontal line.</p>
+<h3>4.5 Duty-cycle observe + mixed fill</h3>
+<p>Live 24 × 12 h, chamber-logger uplinks, mixed fill 45–150 min, budget 10. 18 leak / 6 zero-leak. Source: <code>results/duty_cycle_eval.json</code>. <strong>Do not blend</strong> with Section 4.1.</p>
+<table><tr><th>Metric</th><th>Result</th><th>Label</th></tr><tr><td>TPR</td><td>1.00 (18/18)</td><td>simulated, duty-cycle, mixed fill</td></tr><tr><td>FPR</td><td>0.00 (0/6)</td><td>simulated; one 45-min zero-leak window was <code>sensor_failure</code>, not a leak</td></tr><tr><td>Mean hops (detected)</td><td>0.81</td><td>simulated</td></tr><tr><td>Within 3 hops</td><td>94.4% (17/18)</td><td>simulated; one 45-min leak sat at 6 hops</td></tr><tr><td>Hydrograph <code>t_sat</code> used</td><td>1.00</td><td>simulated</td></tr></table>
+<h3>4.6 Water-balance leak attribution</h3>
+<p>Same 300-scenario library, budget 10. <strong>Simulated.</strong></p>
+<table><tr><th>Metric</th><th>Result</th><th>Label</th></tr><tr><td>Mean \</td><td>leak% − truth\</td><td></td><td>1.68 percentage points</td><td>simulated</td></tr><tr><td>Median \</td><td>leak% − truth\</td><td></td><td>1.79 percentage points</td><td>simulated</td></tr></table>
+<p>Apparent loss (unmetered + meter error) is recovered as customer − billed. Pressure + inlet flow do <strong>not</strong> split unmetered from meter error. We do not report that split as a solver output.</p>
+<h3>4.7 Intrusion-risk windows</h3>
+<p>7 m prior (Kumpel &amp; Nelson). <strong>Simulated.</strong></p>
+<table><tr><th>Metric</th><th>Result</th><th>Label</th></tr><tr><td>Off-window node-hours below 7 m</td><td>32.08 h / 48 h (entire DMA)</td><td>simulated; <strong>trivial</strong> — drained by construction</td></tr><tr><td>In-window share of node-steps below 7 m</td><td>0.023%</td><td>simulated</td></tr><tr><td>Leak scenarios with any in-window P &lt; 7 m</td><td>1.6%</td><td>simulated</td></tr></table>
+<p>While the inlet is closed the DMA is slack and intrusion is possible at any opening. During supply this schematic DMA stays at ~12–22 m, so the 7 m prior almost never fires. A weaker feeder or a much larger leak would change that. Threshold is a per-deployment prior. <strong>Intrusion is not the headline result.</strong></p>
+<h3>4.8 Lifecycle and Sunday update</h3>
+<p>Implemented and unit-tested, not scored on a library:</p>
+<ul>
+<li>Events: open → assign crew → repair → verify leftover fell below 0.35 L/s or by ≥50%. Repair before assign is refused. A simulated repair is labelled.</li>
+<li>Sunday update: shift the after-fill inlet baseline only if leftover is already clean. A leak-sized leftover is refused.</li>
+</ul>
+<h3>4.9 Tests that actually ran</h3>
+<p><code>python -m pytest tests -v</code> runs EPANET, not just mocks. What passed includes: mass-balance residual; after-fill inlet ≈ 0 without a leak and ≈ orifice flow with one; off-window pressure clamped to 0; meter bias and unmetered tags do not change hydraulics; solvers never receive leak labels or the clean field; zero-leak scenarios are not called leaks; a 1.5 L/s leak at J07 is found within 3 hops from noisy sensors; a 1% of inflow leak stays below 0.3 m sensor noise; leftover 1 L/s × 8 open hours = 28.8 m³/day; Sunday update refuses a leak-sized leftover and absorbs a clean meter offset; event repair before assign is refused; <code>t_sat</code> on a 120-minute fill tracks the demand pattern, not the 75-minute clock; CIS apparent residual does not open a leak; official BattLeDIM Table 3 scorer credits on-time exact-link detections and charges €500 per false positive; hour briefs separate fill from leftover from off-window; recon without a model is unavailable; trained twin reconstructs demo-leak.</p>
+<p>What the suite caught: customer volume is <strong>not</strong> independent of a leak. PDD lowers delivered household volume by ~3% for a 1.5 L/s leak.</p>
+<p>What the suite cannot do: field validation, hardware bench tests. Official BattLeDIM 2019 scoring is <code>python -m benchmarks.battledim</code>, not a pytest.</p>
+<hr>
+<h2>5. Graph net: reconstruction only</h2>
+<p>Theme 3 asks for AI-enabled systems. We trained one and reported the loss.</p>
+<p>Library ensemble, budget 10, 5 seeds, 80% row subsets, two aggregated windows, no EPANET in the loop. 45 held-out simulated scenarios.</p>
+<table><tr><th>Metric</th><th>GNN ensemble</th><th>Baseline (budget 10)</th><th>Label</th></tr><tr><td>Leak TPR</td><td><strong>0.00</strong></td><td>1.00</td><td>simulated</td></tr><tr><td>Leak FPR</td><td>0.00</td><td>0.00</td><td>simulated</td></tr><tr><td>Mean hops (detected)</td><td>— none detected —</td><td>0.77</td><td>simulated</td></tr><tr><td>Pressure recon MAE</td><td><strong>1.15 m</strong></td><td>n/a</td><td>simulated</td></tr><tr><td>Mean ensemble spread</td><td>0.61 m</td><td>—</td><td>simulation uncertainty</td></tr></table>
+<p>1.15 m MAE meets the ±2 m <em>simulation</em> reconstruction target. It is not a real-network calibration. Half of a ±2 m budget is already the ±1 m of a 0–10 bar ±1% FS gauge.</p>
+<p>Why leak TPR is 0: the inverse problem at 8–15 sensors is ill-posed (many leak+demand pairs produce the same sparse pressures). The net saw two mean snapshots, not the 5-minute leftover plateau. The baseline is handed the after-fill residual and a sensitivity matrix built from the same hydraulics that generated the library. On an 18-node known model, optimisation should beat a small GNN. BattLeDIM winners (Tongji / Under Pressure) said the same on L-Town: hybrid model search where sensors are sparse, not an end-to-end net.</p>
+<p>The live twin (<code>gnn_recon.pt</code>) is a smaller trainer (20 × 12 h, 25 epochs). On the demo-leak window, field MAE is about 2.5 m. Leak TPR stays 0. The Twin page exposes MAE, TPR 0.00, and “Used for dig? No.” Pressing a junction shows reconstructed vs true metres and lights neighbouring pipes.</p>
+<p>Hour briefs are rules, not a net. Pressing the hydrograph locks an hour and states fill vs leftover vs closed vs valve vs off.</p>
+<hr>
+<h2>6. Negative controls (do not blend)</h2>
+<h3>6.1 Official BattLeDIM 2019</h3>
+<p>L-Town is continuously supplied (782 junctions). We downloaded the evaluation-year SCADA CSVs and the nominal INP (~38 MB), not <code>L-TOWN_Real.inp</code>. Detector: daily minimum-night-flow residual + 6-hour inflow persist. Location = incident pipe of the loudest pressure drop. <strong>Not</strong> the IWS leftover hook. Economic score: Table 3 of Vrachimis et al. (2022), xmax = 300 m, cw = €0.80/m³, cr = €500. Perfect score €523,124. Source: <code>results/battledim_2019.json</code>.</p>
+<table><tr><th>Metric</th><th>This run</th><th>Winners</th><th>Perfect</th><th>Label</th></tr><tr><td>TPR</td><td>0.30 (7/23)</td><td>0.57–0.65</td><td>1.00</td><td>official 2019 SCADA</td></tr><tr><td>Detections</td><td>123 (64 repeats ignored)</td><td>—</td><td>23</td><td>official 2019 SCADA</td></tr><tr><td>False positives</td><td>52</td><td>lower</td><td>0</td><td>official 2019 SCADA</td></tr><tr><td>Economic score</td><td>€144,030</td><td>€260,562–€264,873</td><td>€523,124</td><td>official Table 3</td></tr></table>
+<p>We lost, as expected. Night-flow on a 782-node always-on network without a calibrated EPANET search floods the crew. <strong>Negative control. Do not blend with IWS leftover numbers.</strong></p>
+<p>A short synthetic-leak pass on <code>L-TOWN.inp</code> (10 name-strided sensors, 20 candidate nodes, 2 L/s emitters, 8 tests) recovered <strong>0/8</strong> exact nodes. Topology probe, not a BattLeDIM score.</p>
+<h3>6.2 Continuous copy of <em>this</em> DMA (not BattLeDIM)</h3>
+<p>40 always-pressurised copies of the 18-node schematic, budget 10. <strong>Simulated, continuous variant.</strong></p>
+<table><tr><th>Metric</th><th>Result</th></tr><tr><td>FPR</td><td>0.00</td></tr><tr><td>TPR</td><td>1.00</td></tr><tr><td>Mean hops</td><td>0.48</td></tr></table>
+<p>This is the honesty-preserving continuous result on our topology. It is not L-Town.</p>
+<h3>6.3 CIS / billed file</h3>
+<p>Partner surface. Leftover inlet flow is real loss. The billed file gives the commercial residual. Pressure cannot split theft from meter error or unmetered use. <code>alarms_from_apparent = false</code>. No leak event is opened from the residual.</p>
+<hr>
+<h2>7. UN-pillar alignment</h2>
+<p>Judging includes UN-pillar alignment (20%). We map the <em>unit of work</em>, not a field SDG indicator. TRL 3–4; no deployed impact number.</p>
+<p><strong>Prosperity.</strong> WASREB / WaterWorX / Miya-style performance-based contracts pay a lump sum per DMA established plus a fee per <strong>m³/day leakage reduced</strong>. The desk emits leftover L/s and leftover m³/day on open hours. A job closes when leftover falls. Kenya public-provider NRW is 48% (WASREB 2024/25). The buyer is a DMA programme, not an “AI platform.”</p>
+<p><strong>Planet and public health.</strong> Converting an IWS DMA to 24/7 for 63 hours to run classic MNF spends water the utility does not have. Running the Zarqa leftover test inside the rationing window avoids that conversion. Off-window slack is named as an intrusion window (Kumpel &amp; Nelson). We do not claim we solved contamination: on this schematic DMA the 7 m prior almost never fires while the inlet is open (0.023% of in-window node-steps).</p>
+<p><strong>Cooperation.</strong> Methods, numbers, demo library, and recon weights are public. CIS is a billed-file ingest so a utility keeps its commercial system. Inlet control stays with whoever already schedules the valve (i2O / the WSP). We read leftover on that meter. We do not replace a billing stack, a PRV controller, or a job-card GIS.</p>
+<hr>
+<h2>8. Feasibility, IoT stack, and costing</h2>
+<p>No firmware is built. Paper costing only. Full architecture: <code>docs/iot_stack.md</code>, <code>docs/hardware_bom.md</code>.</p>
+<h3>8.1 Three layers</h3>
+<p>Only layer 1 is required to detect. Layer 2 localises. Layer 3 is someone else’s product.</p>
+<p><strong>Layer 1 — detection (mandatory, one chamber).</strong> Inlet flow (pulse / Modbus from the existing bulk meter; if none, compound or electromagnetic with <strong>Qmin ≤ 0.2 L/s</strong> / 0.72 m³/h). Zarqa’s Sensus WP-Dynamic DN100 (Qmin 0.80 m³/h ≈ 0.22 L/s) is just adequate for a 0.40 L/s hook; do not go larger. Clamp-on ultrasonic is a check tool, not a permanent inlet (theft, full-pipe assumption, IWS air). Inlet pressure (0–10 bar, 4–20 mA) confirms the window is actually pressurised. Valve position (reed / limit switch or AVK-class) distinguishes scheduled-closed from failed-open from “SCADA said open.” Without valve position the hydrograph is uninterpretable.</p>
+<p>One logger, chamber-mounted, IP68, magnetic antenna, <strong>≥7 days local buffer</strong> so after-fill survives a KPLC / Safaricom outage. Commercial class: ThingsLog NRW set, i2O DMA logger, HWM MultiLog, Upande pulse node. Not a US$60 post on a stick. Unprotected master meters get stolen (Kericho).</p>
+<p><strong>Layer 2 — localisation (only after leftover is trusted).</strong> 4–8 pressure loggers at greedy-separable nodes (dead-ends + loop splits). Our budget-10 curve is a simulation result, not a year-1 install. Zarqa and Ashdown Park both ran <strong>four</strong> pressure points. No acoustics off-window (they die when the pipe is empty). Optional high-resolution pressure on the open-window transient only (Syrinix-class).</p>
+<p><strong>Layer 3 — do not build.</strong> i2O/PRV control, TaKaDu event desk, SmartTerra/Upande CIS+job-card, Utilis satellite, household AMR. Integrate by API. DMA bulk metering delivers a loss map in weeks; household AMR takes years.</p>
+<h3>8.2 Connectivity</h3>
+<p>Kenya: Safaricom NB-IoT at the inlet if the chamber has signal (Eldowas / Kisumu / Embu already use it). Private LoRaWAN gateway at the DMA for pressure nodes and for chambers with no cellular (Upande, addanode, CityTaps/Kerlink). Store-and-forward either way. <code>sim/observe.py</code> dropouts are this model, not lost days.</p>
+<h3>8.3 Cost (estimated)</h3>
+<p>DIY pressure node (LoRaWAN + solar, mid): transducer 18–28 + MCU/radio 8–14 + LiFePO₄/solar 8–12 + IP68 6–10 + fitting 4–6 + PCB 4–6 ≈ <strong>US$52–76</strong>. ±1% of 10 bar FS is ±1 m of head.</p>
+<table><tr><th>SKU</th><th>What</th><th>Est. USD</th><th>Label</th></tr><tr><td>DIY pressure node</td><td>LoRaWAN + solar</td><td>52–76</td><td>estimated; not utility-grade</td></tr><tr><td>ThingsLog-class pressure node</td><td>Commercial LoRa/NB-IoT</td><td>~520–660 list</td><td>vendor list</td></tr><tr><td>Ayyeka Wavelet</td><td>4G/LoRa industrial</td><td>~1,800–2,500</td><td>vendor list</td></tr><tr><td><strong>Detection-only DMA</strong></td><td>1× inlet flow + P + valve, chamber</td><td><strong>800–1,500</strong></td><td>estimated; <strong>year-1 SKU</strong></td></tr><tr><td>Detection + 5 DIY pressure</td><td>above + 5 × ~US$60</td><td>1,200–1,900</td><td>estimated</td></tr><tr><td>Detection + 5 commercial pressure</td><td>above + 5 ThingsLog-class</td><td>3,500–5,000</td><td>estimated</td></tr><tr><td>White-paper “10 × US$60”</td><td>pressure nodes only, no inlet</td><td>600</td><td>estimated; <strong>insufficient</strong></td></tr></table>
+<p>The white paper’s “under US$1,000 of sensor hardware” holds for <strong>detection-only</strong> if the bulk meter already pulses, or for detection + DIY pressure. It does not hold for a 10-node commercial grid. Inlet Qmin must be ≤ 0.2 L/s or the 0.40 L/s hook is below the meter’s floor.</p>
+<h3>8.4 Scalability and pilot</h3>
+<p>The method scales with isolated, metered DMAs and a trusted inlet — the same prerequisite as nightline. Bluefield’s DMA vs non-DMA split matters: most of the developing world never built UK-style DMAs. A metered inlet is a product prerequisite, not a given. The method does <strong>not</strong> scale by training one GNN on many topologies. We have one schematic network.</p>
+<p><strong>90-day single-DMA pilot (target TRL 5–6).</strong> Fit a pulse logger and valve position on the existing inlet. Run leftover + <code>t_sat</code> every window. Do not install ten pressure loggers until leftover is trusted. Recalibrate the no-leak inlet baseline on Sundays only when leftover is clean. Close jobs only when leftover falls. Pair CIS for apparent loss. Do not alarm theft from pressure. Field data: none today.</p>
+<hr>
+<h2>9. Industry position</h2>
+<p>Incumbents are better at always-on networks, event desks, and billing. We adopt; we do not rebuild.</p>
+<table><tr><th>Source</th><th>What we take</th><th>What we refuse</th></tr><tr><td>Al-Washali / Zarqa</td><td>Saturation from the inlet hydrograph; mechanical inlet with published Qmin; 15-minute logging was enough to wait for tanks; four pressure + one inlet</td><td>Converting the DMA to 24/7 for 63 h</td></tr><tr><td>TaKaDu</td><td>Event lifecycle: open → assign → repair → verify the hydrograph fell; one event per root cause; DMA-size vs smallest-detectable-leak honesty</td><td>Historic-pattern ML that assumes a nightline</td></tr><tr><td>SmartTerra</td><td>Billing / CIS for apparent loss; crew confirm/correct</td><td>Vendor 75% / 80% accuracy claims without a methods paper</td></tr><tr><td>i2O / Mueller</td><td>They schedule the inlet; we read leftover on the same meter; soft-open so fill surge does not burst an empty main</td><td>Competing on PRV control</td></tr><tr><td>HWM MultiLog</td><td>Pseudo-log min/max; secondary logging on alarm (our 1 Hz burst when ΔP ≳ 0.5 m)</td><td>UK always-on nightline firmware defaults</td></tr><tr><td>PUB ALF</td><td>Daily/weekly no-leak update; separate sensor-failure events; cluster anomalies into one event</td><td>90-sensor continuous twin as year 1</td></tr><tr><td>WASREB / WaterWorX / Miya</td><td>Pay per m³/day leakage reduced</td><td>“Digital twin” language</td></tr><tr><td>Upande / addanode (Kenya)</td><td>Pulse the meter that is already there; private LoRaWAN; buffer through KPLC; chamber, not a post</td><td>Replacing every customer meter before the DMA has an inlet</td></tr><tr><td>Ashdown Park / VEI</td><td>Flow detects better than pressure on IWS; persistence window (Vitens DBM)</td><td>Pressure-only grids as the first install</td></tr><tr><td>Syrinix</td><td>High-resolution pressure for the open-window transient only</td><td>Acoustics on empty pipes</td></tr><tr><td>AVK VIDI</td><td>Inlet valve position</td><td>Household-tank IoT in year 1</td></tr><tr><td>BattLeDIM winners</td><td>Hybrid model search on continuous L-Town</td><td>Blending their TPR with our IWS table</td></tr><tr><td>Paryai GRID / MAYIEDGE</td><td>Same tank-fill observation; offline-first honesty</td><td>Marketing percentages without a methods paper; we are ahead on hydraulics, behind on integration</td></tr></table>
+<p>Year-1 we are worse at event desks, acoustic pinpoint, PRV control, and daily twin calibration. CIS is ingest, not a billing product. Pair those.</p>
+<hr>
+<h2>10. Operator software</h2>
+<p>HTTP API (<code>uvicorn api.main:app --port 8000</code>) loads the demo library, the budget-10 placement, and <code>gnn_recon.pt</code> if present. Endpoints: <code>/api/scenarios</code>, <code>/api/windows/{sid}</code> (leftover, hydrograph, dig list, recon), <code>/api/windows/{sid}/at</code> (hour brief), events CRUD (open / assign / repair / verify). JSON is NaN-safe.</p>
+<p>The desk (<code>web/</code>, Vite, http://localhost:5173) is four routes sharing <code>?w=</code>:</p>
+<table><tr><th>Route</th><th>Content</th></tr><tr><td><code>/</code> Inlet</td><td>Leftover L/s, PBC m³/day, supplied m³, hydrograph. Open-window band, leftover band after <code>t_sat</code>. Press an hour to lock a brief (fill / leftover / closed / valve).</td></tr><tr><td><code>/network</code></td><td>DMA map and dig table. Press a junction: neighbours light, role shown. Orange = L1 suggestion.</td></tr><tr><td><code>/twin</code></td><td>Field MAE, leak TPR 0.00, used for dig? No. Heat is reconstructed head. Press a node: reconstructed vs true m.</td></tr><tr><td><code>/crew</code></td><td>Dig list, crew name, state machine. Open only from leftover or an actionable fault.</td></tr></table>
+<p>Four simulated 12 h windows in <code>results/demo</code>: clean (leftover below floor), leak J07 ~1.45 L/s, long fill 120 min + same leak (<code>t_sat</code> ≈ 7.00 h), valve did not open. Streamlit (<code>dashboard/app.py</code>) remains a lab console.</p>
+<hr>
+<h2>11. Limitations</h2>
+<ul>
+<li><strong>One schematic topology.</strong> Not GIS. No multi-network claim.</li>
+<li><strong>Library leaks are large</strong> (0.8–3.0 L/s). 1% of inflow is invisible. Distinct hook work is 0.40 L/s detection, with 4.25 hops.</li>
+<li><strong>Two observation models.</strong> Section 4.1 is i.i.d. 3% dropouts. Section 4.5 is duty-cycle. Do not blend.</li>
+<li><strong>Intrusion is trivial off-window</strong> and almost never fires in-window. We do not headline it.</li>
+<li><strong>GNN leak TPR is 0.</strong> 1.15 m MAE is a simulation reconstruction target, not a field calibration.</li>
+<li><strong>Official BattLeDIM lost.</strong> Continuous negative control only.</li>
+<li><strong>No field data, no firmware, no letter of intent.</strong> CIS is ingest. Theft is not inferred from pressure.</li>
+<li><strong>PDD couples leak and customer volume</strong> (~3% for 1.5 L/s at J07).</li>
+<li><strong>Off-window drain is a clamp</strong>, not an air–water transient.</li>
+<li>Ensemble spread is simulation uncertainty, not conformal coverage.</li>
+<li>Fill/<code>t_sat</code> results are on this DMA only. A leak did not move the knee here; that need not hold on a weaker feeder.</li>
+</ul>
+<hr>
+<h2>12. Reproduction</h2>
+<pre>python -m pip install -r requirements.txt
+python -m pytest tests -v
+python -m sim.demo_library
+cd web &amp;&amp; npm install &amp;&amp; npm run dev
+# other terminal
+uvicorn api.main:app --port 8000</pre>
+<p>Open http://localhost:5173. Optional library rebuild (several minutes):</p>
+<pre>python -m sim.generate -n 300 --duration-h 48
+python -m placement.greedy
+python -m baseline.evaluate --data data/scenarios --duration-h 48
+python -m results.mixed_fill
+python -m results.duty_eval
+python -m benchmarks.battledim
+python -m results.plot_metrics
+python -m model.recon</pre>
+<hr>
+<h2>Appendix A — demo library specification</h2>
+<p><code>results/demo</code>, 12 h, generated by <code>python -m sim.demo_library</code>. Not the 300-scenario library.</p>
+<table><tr><th>ID</th><th>Generator intent</th><th>Expected leftover behaviour</th></tr><tr><td>demo-clean</td><td>seed 2026, 0 leaks, fill 75 min</td><td>Leftover below 0.35 L/s. Event <code>no_leak</code>. No dig.</td></tr><tr><td>demo-leak</td><td>same seed, 1.5 L/s at J07, fill 75 min</td><td>Leftover ~1.45 L/s. Event <code>leak</code>. Dig near J07. PBC ~41.8 m³/day.</td></tr><tr><td>demo-longfill</td><td>same leak, fill 120 min</td><td><code>t_sat</code> ≈ 7.00 h. Clock (75 min) is 45 min early. Leftover still a leak.</td></tr><tr><td>demo-valve</td><td>scheduled window, inlet/pressure zeroed</td><td>Event <code>valve_did_not_open</code>. Not a leak crew.</td></tr></table>
+<p>Twin reconstruction is available on all four if <code>gnn_recon.pt</code> is present. It does not change the event type.</p>
+<h2>Appendix B — assumptions log (abridged)</h2>
+<p>Full text: <code>docs/assumptions.md</code>.</p>
+<p><strong>Network.</strong> One schematic DMA. C = 120. Diameters 40–110 mm so signatures sit above 0.3 m noise. Reservoir 38 m. Off-window P = 0 m after EPANET.</p>
+<p><strong>IWS.</strong> Binary inlet status 05:00–09:00 and 17:00–21:00. Drain is a clamp, not a two-phase empty. Step = 5 min.</p>
+<p><strong>Demand.</strong> Tanks are a pattern, not tank objects. Fill ∈ {45, 60, 75, 90, 120, 150} min. PDD 20 m / 0 m. Leak reduces customer volume (~3% at 1.5 L/s J07).</p>
+<p><strong>Leaks.</strong> Junction emitters, Q = C √P. Zero-leak class exists. A solver that always predicts a leak fails that class.</p>
+<p><strong>Balance.</strong> Real vs apparent needs inlet + billing. Unmetered is tagged. Meter bias is hidden. CIS residual is not a leak alarm.</p>
+<p><strong>Sensors.</strong> Noisy P, Q, valve only. IWS duty cycle. Placement is greedy signatures.</p>
+<p><strong>Recalibration.</strong> Sunday update only if leftover already clean. Sensitivity matrix frozen.</p>
+<p><strong>Lifecycle.</strong> Open → assign → repair → verify leftover fell. Simulated repair is labelled.</p>
+<p><strong>Confidence.</strong> Ensemble spread is simulation uncertainty. No conformal claim.</p>
+<p><strong>Benchmarks.</strong> BattLeDIM 2019 is a continuous negative control. Never average with IWS TPR.</p>
+<hr>
+<h2>References</h2>
+<p>Al-Washali, T., Sharma, S., Al-Nozaily, F., Haidera, M., &amp; Kennedy, M. related IWS / NRW papers including <em>Water</em> 11(1):48 (2019) and <em>Resources, Conservation and Recycling</em> (2019) on the Zarqa saturation test.</p>
+<p>Kumpel, E., &amp; Nelson, K. L. (2014). Mechanisms affecting water quality in an intermittent piped water supply. <em>Environmental Science &amp; Technology</em>.</p>
+<p>Liemberger, R., &amp; Wyatt, A. (2019). Quantifying the global non-revenue water problem. <em>Water Science &amp; Technology: Water Supply</em>.</p>
+<p>Taylor, D. D. J., et al. (2018). Intermittent water supply population estimates as cited in the white paper.</p>
+<p>Vrachimis, S. G., et al. (2022). BattLeDIM. Table 3 economic score (xmax 300 m, cw €0.80/m³, cr €500).</p>
+<p>WASREB (2024/25). Impact report; Kenya public-provider NRW.</p>
+<p>Farley, M., &amp; Trow, S.; Lambert, A. Nightline / MNF practice.</p>
+<p>Vitens DBM persistence (as used for PERSIST_STEPS = 4).</p>
+<p>Numbers and machine-readable copies: <code>results/RESULTS.md</code>, <code>results/metrics.json</code>, <code>results/battledim_2019.json</code>, <code>results/duty_cycle_eval.json</code>, <code>results/mixed_fill.json</code>, <code>results/gnn_eval.json</code>. Architecture: <code>docs/assumptions.md</code>, <code>docs/iot_stack.md</code>, <code>docs/hardware_bom.md</code>, <code>docs/competitive_landscape.md</code>.</p></body></html>

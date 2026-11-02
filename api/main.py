@@ -16,10 +16,10 @@ if str(ROOT) not in sys.path:
 import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from baseline.emitter_calibrate import estimate_leaks
-from baseline.evaluate import build_noleak_and_sensitivity
+from baseline.evaluate import engine_cache_dir, load_or_build_engine
 from baseline.explain import explain_at_hour, explain_window
 from model.recon import load_model, reconstruct_window
 from dashboard.lifecycle import close_with_verify, load_events, mark_repaired, open_event, assign_crew, save_events
@@ -50,7 +50,7 @@ _GNN = None
 def _startup():
     global _ENGINE, _SENSORS, _GNN
     ensure_demo_library(DEMO)
-    _ENGINE = build_noleak_and_sensitivity(12.0)
+    _ENGINE = load_or_build_engine(12.0, engine_cache_dir(12.0, ROOT / "results"))
     if PLACE.exists():
         raw = json.loads(PLACE.read_text(encoding="utf-8"))["placements"]
         _SENSORS = {k: v["sensors"] if isinstance(v, dict) else v for k, v in raw.items()}
@@ -218,5 +218,19 @@ def events_act(eid: str, action: str, payload: dict | None = None):
 
 
 DIST = ROOT / "web" / "dist"
-if DIST.exists():
-    app.mount("/", StaticFiles(directory=DIST, html=True), name="web")
+
+
+@app.get("/{path:path}")
+def spa(path: str):
+    """Serve the Vite build, including React Router paths like /network."""
+    if not DIST.exists():
+        raise HTTPException(404, "UI not built — run npm run build in web/")
+    dist = DIST.resolve()
+    candidate = (dist / path).resolve() if path else dist / "index.html"
+    try:
+        candidate.relative_to(dist)
+    except ValueError as exc:
+        raise HTTPException(404) from exc
+    if path and candidate.is_file():
+        return FileResponse(candidate)
+    return FileResponse(dist / "index.html")

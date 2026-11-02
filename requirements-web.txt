@@ -1,0 +1,12 @@
+wntr>=1.2
+six
+pyyaml
+numpy
+pandas
+scipy
+fastapi>=0.115
+starlette>=0.46,<2
+uvicorn
+torch
+networkx
+matplotlib

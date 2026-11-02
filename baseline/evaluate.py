@@ -6,8 +6,10 @@ import argparse
 import json
 from collections import defaultdict
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
+import pandas as pd
 
 from baseline.emitter_calibrate import estimate_leaks
 from baseline.graph_distance import match_leaks, pipe_graph
@@ -27,6 +29,41 @@ def build_noleak_and_sensitivity(duration_h: float) -> dict:
         "junctions": pack["junctions"],
         "noleak": noleak,
     }
+
+
+def engine_cache_dir(duration_h: float, root: Path | None = None) -> Path:
+    base = Path(root) if root is not None else Path("results")
+    return base / f"engine_{int(duration_h)}h"
+
+
+def load_or_build_engine(duration_h: float, cache_dir: Path | None = None) -> dict:
+    """Reuse a baked no-leak + signature pack so hosted boot skips EPANET."""
+    cache = Path(cache_dir) if cache_dir is not None else engine_cache_dir(duration_h)
+    sig_p = cache / "signatures.npy"
+    meta_p = cache / "meta.json"
+    press_p = cache / "noleak_pressure.pkl"
+    inlet_p = cache / "noleak_inlet.pkl"
+    if sig_p.exists() and meta_p.exists() and press_p.exists() and inlet_p.exists():
+        meta = json.loads(meta_p.read_text(encoding="utf-8"))
+        return {
+            "signatures": np.load(sig_p),
+            "leak_nodes": list(meta["leak_nodes"]),
+            "junctions": list(meta["junctions"]),
+            "noleak": SimpleNamespace(
+                pressure_m=pd.read_pickle(press_p),
+                inlet_flow_lps=pd.read_pickle(inlet_p),
+            ),
+        }
+    pack = build_noleak_and_sensitivity(duration_h)
+    cache.mkdir(parents=True, exist_ok=True)
+    np.save(sig_p, pack["signatures"])
+    meta_p.write_text(
+        json.dumps({"leak_nodes": pack["leak_nodes"], "junctions": pack["junctions"]}),
+        encoding="utf-8",
+    )
+    pack["noleak"].pressure_m.to_pickle(press_p)
+    pack["noleak"].inlet_flow_lps.to_pickle(inlet_p)
+    return pack
 
 
 def _align_noleak(noleak, times_s: list[int]):

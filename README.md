@@ -7,7 +7,8 @@ Team RKO, registration CMAT-00064.
 
 **Scientific hook.** Customer demand is storage-limited — once a household tank fills, draw stops regardless of pressure. A leak is an emitter — it keeps drawing as long as there is pressure. That difference is what lets sparse pressure (and the inlet meter) separate leaks from normal use.
 
-Public repo: https://github.com/Nosh-thee-techy/maji-water-network-ai
+Public repo: https://github.com/Nosh-thee-techy/maji-water-network-ai  
+**Live desk:** https://maji-iws.fly.dev/  
 Fallback tag: `v1-baseline` (scenario library + placement + emitter-calibration baseline).
 
 ## What is simulated vs real
@@ -45,6 +46,8 @@ uvicorn api.main:app --port 8000
 ```
 
 Open http://localhost:5173. The API is http://127.0.0.1:8000. Streamlit (`streamlit run dashboard/app.py`) remains as a lab console.
+
+The hosted copy is the same desk: https://maji-iws.fly.dev/ (Fly.io, Frankfurt). It sleeps when idle; the first click after a pause can take ~30 s.
 
 Regenerate and evaluate (several minutes):
 

@@ -24,6 +24,7 @@ Thumbs.db
 
 # Runtime dashboard event store
 results/events.json
+results/engine_*/
 
 # Generated scenario libraries (keep a small sample under results/)
 data/scenarios/

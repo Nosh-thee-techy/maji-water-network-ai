@@ -5,10 +5,13 @@ Sparse-sensor, physics-informed digital twin for **intermittently supplied** wat
 Hackathon: Khalifa University–UNESCO Global Water Hackathon 2026, Theme 3.
 Team RKO, registration CMAT-00064.
 
-**Scientific hook.** Customer demand is storage-limited — once a household tank fills, draw stops regardless of pressure. A leak is an emitter — it keeps drawing as long as there is pressure. That difference is what lets sparse pressure (and the inlet meter) separate leaks from normal use.
+**Hosted operator desk:** https://maji-iws.fly.dev/
 
 Public repo: https://github.com/Nosh-thee-techy/maji-water-network-ai  
-**Live desk:** https://maji-iws.fly.dev/  
+Final report: [`docs/MAJI_Final_Report.pdf`](docs/MAJI_Final_Report.pdf)
+
+**Scientific hook.** Customer demand is storage-limited — once a household tank fills, draw stops regardless of pressure. A leak is an emitter — it keeps drawing as long as there is pressure. That difference is what lets sparse pressure (and the inlet meter) separate leaks from normal use.
+
 Fallback tag: `v1-baseline` (scenario library + placement + emitter-calibration baseline).
 
 ## What is simulated vs real
@@ -47,7 +50,7 @@ uvicorn api.main:app --port 8000
 
 Open http://localhost:5173. The API is http://127.0.0.1:8000. Streamlit (`streamlit run dashboard/app.py`) remains as a lab console.
 
-The hosted copy is the same desk: https://maji-iws.fly.dev/ (Fly.io, Frankfurt). It sleeps when idle; the first click after a pause can take ~30 s.
+To skip local setup, use the hosted desk: **https://maji-iws.fly.dev/**. It sleeps when idle; the first click after a pause can take about 30 seconds.
 
 Regenerate and evaluate (several minutes):
 
@@ -82,6 +85,7 @@ results/      metrics.json, RESULTS.md, captioned figures
 docs/         hardware BOM, assumptions log
 ```
 
+**Live desk:** https://maji-iws.fly.dev/  
 Final report (PDF): [`docs/MAJI_Final_Report.pdf`](docs/MAJI_Final_Report.pdf). Source and numbers: [`docs/MAJI_Final_Report.md`](docs/MAJI_Final_Report.md), [`results/RESULTS.md`](results/RESULTS.md).
 
 ## Team
